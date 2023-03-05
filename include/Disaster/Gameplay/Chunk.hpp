@@ -1,9 +1,16 @@
 #ifndef PX_DISASTER_GAMEPLAY_CHUNK_HPP
 #define PX_DISASTER_GAMEPLAY_CHUNK_HPP
 #include <atomic>
+#include <array>
+#include <memory>
 #include <cstdint>
 
-#include <SFML/Graphics.hpp>
+#include <Disaster/Graphics/VertexArray.hpp>
+#include <Disaster/Graphics/Texture.hpp>
+#include <Disaster/Graphics/Transform.hpp>
+#include <Disaster/System/Vector2.hpp>
+#include <Disaster/System/Rect.hpp>
+#include <Disaster/System/Color.hpp>
 #include <Disaster/Utils/FastNoiseLite.h>
 #include <Disaster/Utils/MemoryStream.hpp>
 #include <Disaster/ITickable.hpp>
@@ -13,11 +20,11 @@ namespace px::disaster {
   const int kChunkSize = 256;
 
   namespace gameplay {
-    class Chunk : public sf::Drawable, public ITickable, public utils::ISerializable {
+    class Chunk : public ITickable, public utils::ISerializable {
     private:
       TileID m_tiles[kChunkSize][kChunkSize];
-      sf::VertexArray m_vertices;
-      sf::Transform m_transform;
+      std::array<Vector2f, kChunkSize * kChunkSize * 4> m_textureCoords;
+      Transform m_transform;
 
       int m_x;
       int m_y;
@@ -25,12 +32,13 @@ namespace px::disaster {
       bool m_wasEdited;
       std::unique_ptr<std::atomic_bool> m_inQueue;
 
-      const sf::Texture *m_texture;
+      const graphics::Texture *m_texture;
+
+      static std::array<Vector2f, kChunkSize * kChunkSize * 4> gridVertices;
+      static graphics::VertexArray gridVA;
 
     public:
       Chunk(int x, int y, bool inQueue = false);
-
-      void GenerateVertices();
 
       int GetX();
       int GetY();
@@ -38,7 +46,7 @@ namespace px::disaster {
       void Clear(TileID tile = 0);
       /// @brief Update tile textures
       /// @param area updateable area (default: all chunk)
-      void UpdateUV(sf::IntRect area = sf::IntRect(0, 0, kChunkSize, kChunkSize));
+      void UpdateUV(IntRect area = IntRect(0, 0, kChunkSize, kChunkSize));
 
       /// @brief Update tile texture
       /// @param x X coordinate inside the chunk (from 0 to kChunkSize)
@@ -69,12 +77,12 @@ namespace px::disaster {
       /// @return pointer to tile ID
       const TileID *GetTileRef(int x, int y) const;
 
-      void SetColor(int x, int y, sf::Color color);
+      void SetColor(int x, int y, Color color);
 
       bool IsInQueue() const;
       void SetQueueStatus(bool status);
 
-      virtual void draw(sf::RenderTarget &target, sf::RenderStates states) const override;
+      void Draw() const;
 
       void Serialize(utils::MemoryStream &stream) const override;
       void Deserialize(utils::MemoryStream &stream) override;

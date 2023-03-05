@@ -11,18 +11,17 @@
 #include <Disaster/ITickable.hpp>
 #include <Disaster/Gameplay/Chunk.hpp>
 #include <Disaster/Gameplay/BaseWorldGenerator.hpp>
+#include <Disaster/ThreadSafe/Queue.hpp>
 #include <Disaster/Utils/FastNoiseLite.h>
 
 namespace px::disaster::gameplay {
-  class World : public sf::Drawable, public ITickable {
+  class World : public ITickable {
     friend class Game;
   private:
     std::mutex m_chunksMutex;
     std::vector<std::unique_ptr<Chunk>> m_chunks;
 
-    std::mutex m_chunksQueueMutex;
-    std::condition_variable m_chunkQueueCond;
-    std::queue<Chunk *> m_chunkQueue;
+    thread_safe::Queue<Chunk *> m_chunksQueue;
     
     std::thread m_chunkLoadThread;
     std::atomic_bool m_stopChunkLoadThread;
@@ -72,7 +71,7 @@ namespace px::disaster::gameplay {
     /// @return mutex
     std::mutex &GetChunksMutex();
 
-    virtual void draw(sf::RenderTarget &target, sf::RenderStates states) const override;
+    void Draw() const;
   };
 }
 

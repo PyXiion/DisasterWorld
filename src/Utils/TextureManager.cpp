@@ -34,9 +34,9 @@ namespace px::disaster::utils {
     if (!fs::is_regular_file(filename))
       throw std::runtime_error("\"" + filename + "\" is not regular file.");
     
-    std::unique_ptr<sf::Texture> texture(new sf::Texture);
-    if (!texture->loadFromFile(filename))
-      throw std::runtime_error("Failed to load texture \"" + filename + "\".");
+    std::unique_ptr<graphics::Texture> texture(new graphics::Texture);
+    
+    texture->LoadFromFile(filename);
     
     std::string id = GetIdFromFilename(filename);
     m_textures[id] = std::move(texture);
@@ -50,7 +50,7 @@ namespace px::disaster::utils {
     
   }
 
-  sf::Texture &TextureManager::GetTexture(std::string textureId) {
+  graphics::Texture &TextureManager::GetTexture(std::string textureId) {
     return *m_textures[textureId];
   }
 

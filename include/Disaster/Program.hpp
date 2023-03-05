@@ -1,6 +1,7 @@
 #ifndef PX_DISASTER_PROGRAM_HPP
 #define PX_DISASTER_PROGRAM_HPP
 #include <Disaster/Gameplay/Game.hpp>
+#include <Disaster/System/Window.hpp>
 #include <Disaster/Utils/TextureManager.hpp>
 #include <Disaster/AppConsole.hpp>
 
@@ -8,7 +9,7 @@ namespace px::disaster {
   class Program {
     friend class gameplay::Game;
   private:
-    sf::RenderWindow m_window;
+    system::Window m_window;
 
     utils::TextureManager *m_textureManager;
     gameplay::Game *m_game;
@@ -17,9 +18,10 @@ namespace px::disaster {
     script::ScriptEngine *m_scriptEngine;
 
   public:
+    /// @brief The main stream of the program. Run it to start the program
     void Main();
-
-    sf::RenderWindow &GetWindow();
+    
+    system::Window &GetWindow();
     gameplay::Game &GetGame();
     utils::TextureManager &GetTextureManager();
     script::ScriptEngine &GetScriptEngine();

@@ -5,27 +5,32 @@
 #include <Disaster/Program.hpp>
 #include <easy/profiler.h>
 
-void CopyVertexArray(const sf::VertexArray &from, sf::VertexArray &to) {
-  to.setPrimitiveType(from.getPrimitiveType());
-  to.resize(from.getVertexCount());
-
-
-  for (size_t i = 0; i < from.getVertexCount(); ++i) {
-    to[i].color = from[i].color;
-    to[i].position = from[i].position;
-    to[i].texCoords = from[i].texCoords;
-  }
-}
-
 namespace px::disaster::gameplay {
+  std::array<Vector2f, kChunkSize * kChunkSize * 4> Chunk::gridVertices;
+  graphics::VertexArray Chunk::gridVA;
+
   Chunk::Chunk(int x, int y, bool inQueue) 
     : m_x(x), 
       m_y(y), 
       // m_vertices(sf::Quads, kChunkSize * kChunkSize * 4), 
       m_wasEdited(false), 
       m_inQueue(std::make_unique<std::atomic_bool>(inQueue)) {
-    m_transform.translate(m_x * kChunkSize, m_y * kChunkSize);
+    m_transform.Move(m_x * kChunkSize, m_y * kChunkSize);
     m_texture = &Program::GetInstance().GetGame().GetTilemap().GetTilemapTexture();
+
+    static auto _executeOnce = [] -> char {
+      for (int i = 0; i < kChunkSize; ++i) {
+        for (int j = 0; j < kChunkSize; ++j) {
+          // Define position of the tile
+          int index = (i + j * kChunkSize) * 4;
+          gridVertices[index] = Vector2f(i, j);
+          gridVertices[index + 1] = Vector2f(i + 1, j);
+          gridVertices[index + 2] = Vector2f(i + 1, j + 1);
+          gridVertices[index + 3] = Vector2f(i, j + 1);
+        }
+      }
+      return 0;
+    }();
   }
 
   int Chunk::GetX() {
@@ -33,29 +38,6 @@ namespace px::disaster::gameplay {
   }
   int Chunk::GetY() {
     return m_y;
-  }
-
-  void Chunk::GenerateVertices() {
-    EASY_FUNCTION();
-    // Generate vertex array with tiles
-    static sf::VertexArray chunkVertices;
-    static auto _executeOnce = [] -> char {
-      chunkVertices.setPrimitiveType(sf::Quads);
-      chunkVertices.resize(kChunkSize * kChunkSize * 4);
-      for (int i = 0; i < kChunkSize; ++i) {
-        for (int j = 0; j < kChunkSize; ++j) {
-          // Define position of the tile
-          int index = (i + j * kChunkSize) * 4;
-          chunkVertices[index].position = sf::Vector2f(i, j);
-          chunkVertices[index + 1].position = sf::Vector2f(i + 1, j);
-          chunkVertices[index + 2].position = sf::Vector2f(i + 1, j + 1);
-          chunkVertices[index + 3].position = sf::Vector2f(i, j + 1);
-        }
-      }
-      return 0;
-    }();
-
-    m_vertices = chunkVertices;
   }
 
   void Chunk::Clear(TileID tile) {
@@ -67,7 +49,7 @@ namespace px::disaster::gameplay {
     }
   }
   
-  void Chunk::UpdateUV(sf::IntRect area) {
+  void Chunk::UpdateUV(IntRect area) {
     EASY_FUNCTION();
     for (int i = area.left; i < area.left + area.width; i++)
       for (int j = area.top; j < area.top + area.height; j++) {
@@ -77,12 +59,12 @@ namespace px::disaster::gameplay {
   void Chunk::UpdateUV(int x, int y) {
     int index = (x + y * kChunkSize) * 4;
 
-    sf::IntRect rect = Program::GetInstance().GetGame().GetTilemap().GetTileTextureRect(m_tiles[x][y]);
+    IntRect rect = Program::GetInstance().GetGame().GetTilemap().GetTileTextureRect(m_tiles[x][y]);
 
-    m_vertices[index].texCoords =     sf::Vector2f(rect.left, rect.top);
-    m_vertices[index + 1].texCoords = sf::Vector2f(rect.left + rect.width, rect.top);
-    m_vertices[index + 2].texCoords = sf::Vector2f(rect.left + rect.width, rect.top + rect.height);
-    m_vertices[index + 3].texCoords = sf::Vector2f(rect.left, rect.top + rect.height);
+    m_textureCoords[index] =     Vector2f(rect.left, rect.top);
+    m_textureCoords[index + 1] = Vector2f(rect.left + rect.width, rect.top);
+    m_textureCoords[index + 2] = Vector2f(rect.left + rect.width, rect.top + rect.height);
+    m_textureCoords[index + 3] = Vector2f(rect.left, rect.top + rect.height);
   }
 
   void Chunk::SetTile(int x, int y, TileID tileId) {
@@ -101,13 +83,13 @@ namespace px::disaster::gameplay {
     return &m_tiles[x][y];
   }
 
-  void Chunk::SetColor(int x, int y, sf::Color color) {
+  void Chunk::SetColor(int x, int y, Color color) {
     int index = (x + y * kChunkSize) * 4;
 
-    m_vertices[index].color = color;
-    m_vertices[index + 1].color = color;
-    m_vertices[index + 2].color = color;
-    m_vertices[index + 3].color = color;
+    // m_vertices[index].color = color;
+    // m_vertices[index + 1].color = color;
+    // m_vertices[index + 2].color = color;
+    // m_vertices[index + 3].color = color;
   }
 
   bool Chunk::IsInQueue() const {
@@ -118,11 +100,9 @@ namespace px::disaster::gameplay {
     *m_inQueue = status;
   }
 
-  void Chunk::draw(sf::RenderTarget &target, sf::RenderStates states) const {
-    EASY_BLOCK("Chunk::draw");
-    states.transform *= m_transform;
-    states.texture = m_texture;
-    target.draw(m_vertices, states);
+  void Chunk::Draw() const {
+    EASY_BLOCK("Chunk::Draw");
+
   }
 
   void Chunk::Serialize(utils::MemoryStream &stream) const {

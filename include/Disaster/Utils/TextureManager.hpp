@@ -4,12 +4,12 @@
 #include <unordered_map>
 #include <memory>
 
-#include <SFML/Graphics.hpp>
+#include <Disaster/Graphics/Texture.hpp>
 
 namespace px::disaster::utils {
   class TextureManager {
   private:
-    std::unordered_map<std::string, std::unique_ptr<sf::Texture>> m_textures;
+    std::unordered_map<std::string, std::unique_ptr<graphics::Texture>> m_textures;
 
     std::string GetIdFromFilename(std::string filename);
 
@@ -27,7 +27,7 @@ namespace px::disaster::utils {
 
     /// @brief Returns reference to Texture
     /// @param id texture ID
-    sf::Texture &GetTexture(std::string textureId);
+    graphics::Texture &GetTexture(std::string textureId);
 
     /// @brief Check is a texture exists
     /// @param id texture ID

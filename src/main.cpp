@@ -6,7 +6,6 @@
 int main(int argc, char** argv) {
   EASY_PROFILER_ENABLE;
   EASY_MAIN_THREAD;
-  profiler::startListen();
   // try {
     px::disaster::Program::GetInstance().Main();
   // } catch (const std::exception &e) {

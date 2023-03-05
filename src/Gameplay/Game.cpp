@@ -3,9 +3,9 @@
 #include <filesystem>
 
 #include <Disaster/Program.hpp>
+#include <Disaster/Graphics/VertexArray.hpp>
 #include <Disaster/Utils/RamUsage.hpp>
-#include <imgui-sfml/imgui.h>
-#include <imgui-sfml/imgui-SFML.h>
+#include <imgui/imgui.h>
 #include <easy/profiler.h>
 #include <easy/arbitrary_value.h>
 
@@ -32,7 +32,7 @@ namespace px::disaster::gameplay {
 
     EASY_EVENT("Resources loaded", profiler::colors::Magenta);
 
-    m_camera = new Camera(m_window);
+    m_camera = new Camera();
     m_camera->SetZoom(5.0f);
 
     PX_LOG("World is initialising");
@@ -68,28 +68,15 @@ namespace px::disaster::gameplay {
 
       // Camera
       if (ImGui::TreeNode("Camera")) {
-        sf::Vector2f camPos = m_camera->GetPosition();
-        sf::Vector2f camSize = m_camera->GetSize();
+        Vector2f camPos = m_camera->GetPosition();
+        Vector2f camSize = m_camera->GetSize();
         ImGui::Text("Position: %f %f", camPos.x, camPos.y);
         ImGui::Text("Size: %f %f", camSize.x, camSize.y);
         ImGui::Text("Zoom: %f", m_camera->GetZoom());
 
         ImGui::TreePop();
       }
-      // Chunks queue
-      if (ImGui::TreeNode("Chunks queue")) {
-        std::lock_guard<std::mutex> lk(m_world->m_chunksQueueMutex);
-        std::queue tmp_q = m_world->m_chunkQueue; //copy the original queue to the temporary queue
-
-        while (!tmp_q.empty())
-        {
-          auto elem = tmp_q.front();
-          ImGui::Text("Chunk %p", elem);
-          tmp_q.pop();
-        } 
-        ImGui::TreePop();
       }
-    }
     ImGui::End();
   }
   void Game::ShowDebugToolsMenu() {
@@ -111,14 +98,14 @@ namespace px::disaster::gameplay {
     EASY_FUNCTION();
     ImGui::Begin("Tileset", &m_tilesetWindow);
     if (ImGui::CollapsingHeader("Tileset texture"))
-      ImGui::Image(m_tilemap->GetTilemapTexture());
+      // ImGui::Image(m_tilemap->GetTilemapTexture());
     if (ImGui::CollapsingHeader("Tiles")) {
       for (const auto &tile : m_tilemap->GetTiles()) {
         if (ImGui::TreeNode(tile.id.c_str())) {
           ImGui::Text("Texture ID: %s", tile.textureId.c_str());
-          ImGui::Text("Tile rect: %i %i %i %i", tile.tilemapRect.left, tile.tilemapRect.top, 
-              tile.tilemapRect.width, tile.tilemapRect.height);
-          ImGui::Image(*tile.texture);
+          ImGui::Text("Tile rect: %i %i %i %i", tile.tilesetRect.left, tile.tilesetRect.top, 
+              tile.tilesetRect.width, tile.tilesetRect.height);
+          // ImGui::Image(*tile.texture);
           ImGui::TreePop();
         }
       }
@@ -128,7 +115,25 @@ namespace px::disaster::gameplay {
 
   void Game::Draw() {
     EASY_BLOCK("Game::Draw", profiler::colors::Green700);
-    m_window.draw(*m_world);
+
+    static float test[] = {
+      0.5f, -0.5f,
+     -0.5f, -0.5f,
+      0.0f,  0.5f
+    };
+    static graphics::VertexArray va;
+    static graphics::Shader shader;
+    static bool _once = false;
+    if (!_once) {
+      _once = true;
+      va.SetData(sizeof(test) / sizeof(*test), test);
+      shader.LoadFromFile("./data/shaders/chunk.vs", "./data/shaders/chunk.fs");
+    }
+
+    va.Draw(&shader);
+
+    return; 
+    // m_window.draw(*m_world);
 
     // sf::Sprite tilemap(m_tilemap->GetTilemapTexture());
     // m_window.draw(tilemap);
@@ -144,19 +149,19 @@ namespace px::disaster::gameplay {
 
     // Move camera
     if (!imguiIO.WantCaptureMouse && !imguiIO.WantCaptureKeyboard) {
-      float camZoom = m_camera->GetZoom();
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-        m_camera->Move(sf::Vector2f(0, -m_settings.cameraSpeed / camZoom * deltaTime));
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-        m_camera->Move(sf::Vector2f(0, m_settings.cameraSpeed / camZoom * deltaTime));
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-        m_camera->Move(sf::Vector2f(-m_settings.cameraSpeed / camZoom * deltaTime, 0));
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-        m_camera->Move(sf::Vector2f(m_settings.cameraSpeed / camZoom * deltaTime, 0));
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
-        m_camera->Zoom(1.0f + (0.1f * deltaTime));
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
-        m_camera->Zoom(1.0f - (0.1f * deltaTime));
+      // float camZoom = m_camera->GetZoom();
+      // if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+      //   m_camera->Move(sf::Vector2f(0, -m_settings.cameraSpeed / camZoom * deltaTime));
+      // if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+      //   m_camera->Move(sf::Vector2f(0, m_settings.cameraSpeed / camZoom * deltaTime));
+      // if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+      //   m_camera->Move(sf::Vector2f(-m_settings.cameraSpeed / camZoom * deltaTime, 0));
+      // if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+      //   m_camera->Move(sf::Vector2f(m_settings.cameraSpeed / camZoom * deltaTime, 0));
+      // if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
+      //   m_camera->Zoom(1.0f + (0.1f * deltaTime));
+      // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+      //   m_camera->Zoom(1.0f - (0.1f * deltaTime));
 
       if (m_mouseScroll > 0)
         m_camera->Zoom(1.1f);
@@ -165,20 +170,16 @@ namespace px::disaster::gameplay {
       m_mouseScroll = 0.0f;
     }
 
-    m_camera->Update(deltaTime);
+    m_camera->Update();
 
     EASY_VALUE("CameraZoom", m_camera->GetZoom(), EASY_VIN("CameraZoom"));
   }
 
-  void Game::ProcessEvent(sf::Event &event) {
+  void Game::ProcessEvent(system::Event &event) {
     EASY_FUNCTION();
     switch (event.type) {
-      case sf::Event::Closed: {
-        m_window.close();
-        break;
-      }
-      case sf::Event::MouseWheelScrolled: {
-        m_mouseScroll = event.mouseWheelScroll.delta;
+      case SDL_MOUSEWHEEL: {
+        m_mouseScroll = event.wheel.y;
       }
       default:
         break;
@@ -188,8 +189,8 @@ namespace px::disaster::gameplay {
     EASY_FUNCTION();
     std::unique_lock<std::mutex> lk(m_world->GetChunksMutex());
     auto &chunks = m_world->GetChunks();
-    sf::Vector2f camPos = m_camera->GetPosition() / static_cast<float>(kChunkSize);
-    sf::Vector2f camSize = m_camera->GetSize() / 2.0f / static_cast<float>(kChunkSize);
+    Vector2f camPos = m_camera->GetPosition() / static_cast<float>(kChunkSize);
+    Vector2f camSize = m_camera->GetSize() / 2.0f / static_cast<float>(kChunkSize);
     camPos.x = std::floor(camPos.x);
     camPos.y = std::floor(camPos.y);
 
@@ -218,9 +219,7 @@ namespace px::disaster::gameplay {
     // Load chunks that are close to the camera position
     EASY_BLOCK("Load chunks");
     for (int x = std::floor(camPos.x - camSize.x); x <= std::ceil(camPos.x + camSize.x); x++) {
-      std::lock(m_world->m_chunksQueueMutex, m_world->m_chunksMutex);
-      std::lock_guard<std::mutex> lk_a(m_world->m_chunksQueueMutex, std::adopt_lock);
-      std::lock_guard<std::mutex> lk_b(m_world->m_chunksMutex, std::adopt_lock);
+      std::lock_guard<std::mutex> lk_b(m_world->m_chunksMutex);
       for (int y = std::floor(camPos.y - camSize.y); y <= std::ceil(camPos.y + camSize.y); y++) {
         m_world->RequestChunkUnsafe(x, y);
       }

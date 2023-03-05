@@ -5,6 +5,7 @@
 
 #include <Disaster/Program.hpp>
 #include <angelscript/scripthelper.h>
+#include <imgui/imgui.h>
 #include <easy/profiler.h>
 
 std::vector<std::string> split(std::string s, std::string delimiter) {

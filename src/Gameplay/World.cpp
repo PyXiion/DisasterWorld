@@ -10,7 +10,6 @@ namespace px::disaster::gameplay {
   }
   World::~World() {
     if (m_chunkLoadThread.joinable()) {
-      m_chunkQueueCond.notify_one();
       m_stopChunkLoadThread = true;
       m_chunkLoadThread.join();
     }
@@ -23,27 +22,19 @@ namespace px::disaster::gameplay {
   void World::ChunkLoadThread() {
     EASY_THREAD_SCOPE("Chunk loader");
     while (true) {
-      std::unique_lock<std::mutex> lk_a(m_chunksQueueMutex);
-      m_chunkQueueCond.wait(lk_a, [this]{return !m_chunkQueue.empty();});
-
       if (m_stopChunkLoadThread)
         break;
-      
-      std::queue<Chunk *> chunks;
-      std::swap(chunks, m_chunkQueue);
-      lk_a.unlock();
+    
+      Chunk *chunk;
 
-      while (!chunks.empty()) {
-        EASY_BLOCK("Loading chunk", profiler::colors::Orange500);
-        Chunk *chunk = chunks.front();
-        chunks.pop();
+      m_chunksQueue.WaitAndPop(chunk);
 
-        chunk->GenerateVertices();
-        m_worldGenerator->GenerateChunk(*chunk);
-        chunk->UpdateUV();
-        chunk->SetQueueStatus(false);
-        EASY_END_BLOCK
-      }
+      EASY_BLOCK("Loading chunk", profiler::colors::Orange500);
+      // chunk->GenerateVertices();
+      m_worldGenerator->GenerateChunk(*chunk);
+      chunk->UpdateUV();
+      chunk->SetQueueStatus(false);
+      EASY_END_BLOCK
     }
   }
 
@@ -66,7 +57,7 @@ namespace px::disaster::gameplay {
   }
 
   bool World::RequestChunkUnsafe(int x, int y) {
-    EASY_FUNCTION();
+    EASY_BLOCK("World::RequestChunk");
     for (auto& chunk : m_chunks) {
       if (chunk->GetX() == x && chunk->GetY() == y) {
         return false;
@@ -75,16 +66,12 @@ namespace px::disaster::gameplay {
     PX_LOG("Chunk %d %d requested", x, y);
     // PX_LOG("Requested chunk %d %d", x, y);
     m_chunks.push_back(std::make_unique<Chunk>(x, y, true));
-    m_chunkQueue.push(m_chunks.back().get());
-    m_chunkQueueCond.notify_one();
+    m_chunksQueue.Push(m_chunks.back().get());
     return true;
   }
 
   bool World::RequestChunk(int x, int y) {
-    EASY_FUNCTION();
-    std::lock(m_chunksQueueMutex, m_chunksMutex);
-    std::lock_guard<std::mutex> lk_a(m_chunksMutex, std::adopt_lock);
-    std::lock_guard<std::mutex> lk_b(m_chunksQueueMutex, std::adopt_lock);
+    std::lock_guard<std::mutex> lk_a(m_chunksMutex);
     return RequestChunkUnsafe(x, y);
   }
 
@@ -96,11 +83,11 @@ namespace px::disaster::gameplay {
   }
 
 
-  void World::draw(sf::RenderTarget &target, sf::RenderStates states) const {
-    EASY_BLOCK("World::draw");
+  void World::Draw() const {
+    EASY_BLOCK("World::Draw");
     for (const auto &chunk : m_chunks) {
       if (chunk->IsInQueue()) continue;
-      target.draw(*chunk, states);
+      chunk->Draw();
     }
   }
 }

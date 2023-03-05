@@ -2,15 +2,16 @@
 #define PX_DISASTER_GAMEPLAY_TILE_INFO_HPP
 #include <string>
 
-#include <SFML/Graphics.hpp>
+#include <Disaster/Graphics/Texture.hpp>
+#include <Disaster/System/Rect.hpp>
 
 namespace px::disaster::gameplay {
   struct TileInfo {
     std::string id;
     std::string textureId;
     
-    sf::Texture *texture = nullptr;
-    sf::IntRect tilemapRect;
+    graphics::Texture *texture = nullptr;
+    IntRect tilesetRect;
   };
 }
 

@@ -6,6 +6,8 @@
 
 #include <Disaster/Gameplay/Chunk.hpp>
 #include <Disaster/Gameplay/TileInfo.hpp>
+#include <Disaster/Graphics/RenderTexture.hpp>
+#include <Disaster/System/Rect.hpp>
 #include <Disaster/Utils/TextureManager.hpp>
 #include <SFML/Graphics.hpp>
 
@@ -15,7 +17,7 @@ namespace px::disaster::gameplay {
   
   class Tilemap {
   private:
-    sf::RenderTexture m_tilemapTexture;
+    graphics::RenderTexture m_tilemapTexture;
     std::vector<TileInfo> m_tiles;
 
     utils::TextureManager &m_textureManager;
@@ -33,7 +35,7 @@ namespace px::disaster::gameplay {
     /// @param tileId numeric tile ID
     /// @return texture coordinates
     /// @throw Can throw exception if not found
-    sf::IntRect GetTileTextureRect(TileID tileId) const;
+    IntRect GetTileTextureRect(TileID tileId) const;
 
     /// @brief Get tile information by numeric ID
     /// @param tileId numeric tile ID
@@ -49,7 +51,7 @@ namespace px::disaster::gameplay {
 
     /// @brief Get tilemap texture
     /// @return tilemap texture
-    const sf::Texture &GetTilemapTexture() const;
+    const graphics::Texture &GetTilemapTexture() const;
 
     const std::vector<TileInfo> &GetTiles() const;
   };
