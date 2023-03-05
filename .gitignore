@@ -1,5 +1,7 @@
 /.vscode
 /build
-/external
 /libs
 /tools
+DraftPlot
+*.sln
+*.vcproj
