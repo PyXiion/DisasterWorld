@@ -9,10 +9,11 @@ namespace px::disaster::script {
     ~ScriptEngine();
 
     asIScriptEngine *Get();
-    
+
   private:
     asIScriptEngine *m_engine;
 
+    static void MessageCallback(const asSMessageInfo *msg, void *param);
   };
 }
 
