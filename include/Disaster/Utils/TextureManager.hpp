@@ -3,16 +3,12 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <vector>
 
 #include <Disaster/Graphics/Texture.hpp>
 
 namespace px::disaster::utils {
   class TextureManager {
-  private:
-    std::unordered_map<std::string, std::unique_ptr<graphics::Texture>> m_textures;
-
-    std::string GetIdFromFilename(std::string filename);
-
   public:
     /// @brief Loads the texture and returns its ID if successful
     /// @param filename path to file
@@ -33,6 +29,13 @@ namespace px::disaster::utils {
     /// @param id texture ID
     /// @return True if exists
     bool TextureExists(std::string textureId);
+
+    std::vector<std::string> GetTextures() const;
+
+  private:
+    std::unordered_map<std::string, std::unique_ptr<graphics::Texture>> m_textures;
+
+    std::string GetIdFromFilename(std::string filename);
   };
 }
 

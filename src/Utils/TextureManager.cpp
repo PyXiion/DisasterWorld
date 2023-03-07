@@ -9,7 +9,7 @@ namespace fs = std::filesystem;
 
 namespace px::disaster::utils {
   std::string TextureManager::GetIdFromFilename(std::string filename) {
-    EASY_FUNCTION();
+    EASY_BLOCK("TextureManager::GetIdFromFilename");
     // Get filename without extension
     fs::path path(filename);
     std::string id = path.filename();
@@ -27,7 +27,7 @@ namespace px::disaster::utils {
   }
 
   std::string TextureManager::LoadTexture(std::string filename) {
-    EASY_FUNCTION();
+    EASY_BLOCK("TextureManager::LoadTexture");
     // Check existance and type
     if (!fs::exists(filename))
       throw std::runtime_error("File \"" + filename +"\" does not exists.");
@@ -56,5 +56,13 @@ namespace px::disaster::utils {
 
   bool TextureManager::TextureExists(std::string textureId) {
     return m_textures.find(textureId) != m_textures.end();
+  }
+
+  std::vector<std::string> TextureManager::GetTextures() const {
+    std::vector<std::string> ids;
+    for (const auto &it : m_textures) {
+      ids.push_back(it.first);
+    }
+    return ids;
   }
 }
