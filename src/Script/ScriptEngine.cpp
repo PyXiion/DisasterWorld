@@ -1,8 +1,10 @@
 #include <Disaster/Script/ScriptEngine.hpp>
 #include <angelscript/scriptstdstring.h>
+#include <easy/profiler.h>
 
 namespace px::disaster::script {
   ScriptEngine::ScriptEngine() {
+    EASY_BLOCK("ScriptEngine::ScriptEngine");
     m_engine = asCreateScriptEngine();
 
     int r;
@@ -11,6 +13,7 @@ namespace px::disaster::script {
     RegisterStdString(m_engine);
   }
   ScriptEngine::~ScriptEngine() {
+    EASY_BLOCK("ScriptEngine::~ScriptEngine");
     m_engine->ShutDownAndRelease();
   }
 
