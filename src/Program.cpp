@@ -9,15 +9,14 @@
 
 namespace px::disaster {
   void Program::Main() {    
-    m_window.InitGL(4, 5);
     m_window.Create(1280, 720, "Disaster World");
+    m_window.InitGL(3, 3);
     m_window.SetFramerateLimit(60);
 
     // Init GLAD
     if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress)) {
       throw std::runtime_error("Failed to load GLAD.");
     }
-    glViewport(0, 0, m_window.GetWidth(), m_window.GetHeight());
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -27,10 +26,13 @@ namespace px::disaster {
     if (!ImGui_ImplSDL2_InitForOpenGL(m_window.GetSDLHandle(), m_window.GetSDL_GLContext())) {
       throw std::runtime_error("Failed to initialise ImGui.");
     }
-    if (!ImGui_ImplOpenGL3_Init("#version 450")) {
+    if (!ImGui_ImplOpenGL3_Init("#version 330")) {
       throw std::runtime_error("Failed to initialise ImGui.");
     }
 
+    glViewport(0, 0, m_window.GetWidth(), m_window.GetHeight());
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     m_scriptEngine = new script::ScriptEngine;
     m_console = new AppConsole;
@@ -68,29 +70,33 @@ namespace px::disaster {
       EASY_END_BLOCK;
 
       // Draw UI
+      EASY_BLOCK("Draw UI");
       ImGui_ImplOpenGL3_NewFrame();
       ImGui_ImplSDL2_NewFrame(m_window.GetSDLHandle());
       ImGui::NewFrame();
-      EASY_BLOCK("Draw UI");
       m_game->DrawUI();
       m_console->Draw();
       EASY_END_BLOCK;
 
       // Draw other
       // m_window.clear();
-      EASY_BLOCK("Draw");
+
+      EASY_BLOCK("glClear")
       glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
       glClear(GL_COLOR_BUFFER_BIT);
-
-      // m_game->Draw();
+      EASY_END_BLOCK;
       
+      EASY_BLOCK("Draw");
+
+      m_game->Draw();
+
+      EASY_END_BLOCK;
+      
+      EASY_BLOCK("ImGui Render")
       ImGui::Render();
       ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
       EASY_END_BLOCK;
       m_window.Display();
-
-      EASY_END_BLOCK;
     }
 
     ImGui_ImplOpenGL3_Shutdown();
