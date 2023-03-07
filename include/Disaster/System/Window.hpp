@@ -1,5 +1,6 @@
 #ifndef PX_DISASTER_SYSTEM_WINDOW_HPP
 #define PX_DISASTER_SYSTEM_WINDOW_HPP
+#include <Disaster/System/Vector2.hpp>
 #include <SDL2/SDL.h>
 #include <glm/glm.hpp>
 
@@ -58,6 +59,10 @@ namespace px::disaster::system {
     /// @brief Get the height of this window
     /// @return height of this window
     int GetHeight() const;
+
+    /// @brief Get the size of this window
+    /// @return size of this window
+    Vector2i GetSize() const;
 
     /// @brief Set the projection matrix. If the pointer is not set, nothing happens.
     /// @param projection projection matrix

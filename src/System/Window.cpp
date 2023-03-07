@@ -14,10 +14,10 @@ namespace px::disaster::system {
 
   void Window::Create(int width, int height, const char *title) {
     static char _once = [] {
-      SDL_Init(SDL_INIT_EVERYTHING);
+      SDL_Init(SDL_INIT_VIDEO);
       return 0;
     }();
-    m_window = SDL_CreateWindow(title, 0, 0, width, height, SDL_WINDOW_OPENGL);
+    m_window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL);
     m_glContext = SDL_GL_CreateContext(m_window);
 
     m_running = true;
@@ -73,6 +73,9 @@ namespace px::disaster::system {
   }
   int Window::GetHeight() const {
     return m_height;
+  }
+  Vector2i Window::GetSize() const {
+    return Vector2i(m_width, m_height);
   }
 
   void Window::SetProjection(glm::mat4 projection) {
