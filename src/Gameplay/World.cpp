@@ -7,6 +7,7 @@
 namespace px::disaster::gameplay {
   World::World() : m_chunkLoadThread(&World::ChunkLoadThread, this), m_stopChunkLoadThread(false) {
     m_worldGenerator = new BaseWorldGenerator();
+    m_chunks.reserve(100); // magic number
   }
   World::~World() {
     if (m_chunkLoadThread.joinable()) {
@@ -26,15 +27,13 @@ namespace px::disaster::gameplay {
         break;
     
       Chunk *chunk;
-
       m_chunksQueue.WaitAndPop(chunk);
 
-      EASY_BLOCK("Loading chunk", profiler::colors::Orange500);
+      EASY_BLOCK("Generating/loading chunk", profiler::colors::Orange500);
       // chunk->GenerateVertices();
       m_worldGenerator->GenerateChunk(*chunk);
       chunk->UpdateUV();
       chunk->SetQueueStatus(false);
-      EASY_END_BLOCK
     }
   }
 
