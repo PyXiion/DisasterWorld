@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include <Disaster/Program.hpp>
+#include <Disaster/Graphics/Sprite.hpp>
 #include <Disaster/Graphics/VertexArray.hpp>
 #include <Disaster/Utils/RamUsage.hpp>
 #include <imgui/imgui.h>
@@ -12,7 +13,14 @@
 namespace fs = std::filesystem;
 
 namespace px::disaster::gameplay {
-  Game::Game(Program &program) : m_program(program), m_window(program.GetWindow()), m_textureManager(program.GetTextureManager()) {
+  Game::Game(Program &program) 
+    : m_program(program), 
+      m_window(program.GetWindow()), 
+      m_textureManager(program.GetTextureManager()),
+      m_scriptEngine(program.GetScriptEngine()),
+      m_tickSpeed(1.0f), 
+      m_tickMask(0), 
+      m_mouseScroll(0.0f) {
     m_tickRates = {1.0f/20.0f, 1.0f, 30.0f, 120.0f};
     m_tickFunctions = {&Game::TickHigh, &Game::TickMedium, &Game::TickSlow, &Game::TickVerySlow};
   }
@@ -21,23 +29,54 @@ namespace px::disaster::gameplay {
     EASY_BLOCK("Game::Init", profiler::colors::Blue700);
     // Load all core textures
     PX_LOG("Loading Core textures");
+    
+    EASY_BLOCK("Loading textures");
     for (auto const &entry : fs::recursive_directory_iterator("./mods/core/textures")) {
-      if (!fs::is_regular_file(entry.path()))
+      if (!fs::is_regular_file(entry.path()) || entry.path().extension() != ".png")
         continue;
       m_textureManager.LoadTexture(entry.path());
     }
+    EASY_END_BLOCK;
 
     m_tilemap = new Tilemap(m_textureManager);
     m_tilemap->LoadTilemap("./mods/core/tilemaps/general.yaml");
 
-    EASY_EVENT("Resources loaded", profiler::colors::Magenta);
-
     m_camera = new Camera();
-    m_camera->SetZoom(5.0f);
+    // m_camera->SetZoom(5.0f);
 
     PX_LOG("World is initialising");
     m_world = new World();
     PX_LOG("World initialised");
+
+    ConfigureScriptEngine();
+  }
+
+  void Game::ConfigureScriptEngine() {
+    asIScriptEngine *engine = m_scriptEngine.Get();
+    int r;
+
+    // Chunk object
+    r = engine->RegisterObjectType("CChunk", 0, asOBJ_REF | asOBJ_NOCOUNT); assert(r >= 0);
+    r = engine->RegisterTypedef("TileID", "uint16"); assert(r >= 0);
+
+    r = engine->RegisterObjectMethod("CChunk", "TileID GetTile(int x, int y) const", asMETHOD(Chunk, GetTile), asCALL_THISCALL); assert(r >= 0);
+    r = engine->RegisterObjectMethod("CChunk", "void SetTile(int x, int y, TileID id)", asMETHOD(Chunk, SetTile), asCALL_THISCALL); assert(r >= 0);
+
+    r = engine->RegisterObjectMethod("CChunk", "int get_x() const", asMETHOD(Chunk, GetX), asCALL_THISCALL); assert(r >= 0);
+    r = engine->RegisterObjectMethod("CChunk", "int get_y() const", asMETHOD(Chunk, GetY), asCALL_THISCALL); assert(r >= 0);
+
+    // World API
+    r = engine->RegisterObjectType("CWorld", 0, asOBJ_REF | asOBJ_NOHANDLE); assert(r >= 0);
+
+    r = engine->RegisterObjectMethod("CWorld", "CChunk @GetChunkAt(float x, float y)", asMETHOD(World, GetChunk), asCALL_THISCALL); assert(r >= 0);
+    r = engine->RegisterObjectMethod("CWorld", "bool RequestChunkAt(int x, int y)", asMETHOD(World, RequestChunk), asCALL_THISCALL); assert(r >= 0);
+
+    // Game API
+    r = engine->RegisterObjectType("CGame", 0, asOBJ_REF | asOBJ_NOHANDLE); assert(r >= 0);
+
+    r = engine->RegisterObjectMethod("CGame", "CWorld &get_world() property", asMETHOD(Game, GetTilemap), asCALL_THISCALL); assert(r >= 0);
+
+    r = engine->RegisterGlobalProperty("CGame game", this); assert(r >= 0);
   }
 
   void Game::DrawUI() {
@@ -46,7 +85,7 @@ namespace px::disaster::gameplay {
     if (m_tilesetWindow) ShowTilesetWindow();
   }
   void Game::ShowDebugWindow() {
-    EASY_FUNCTION();
+    EASY_BLOCK("Game::ShowDebugWindow");
     ImGui::Begin("Debug", &m_debugWindow, ImGuiWindowFlags_MenuBar);
 
     // Menu bar
@@ -70,13 +109,24 @@ namespace px::disaster::gameplay {
       if (ImGui::TreeNode("Camera")) {
         Vector2f camPos = m_camera->GetPosition();
         Vector2f camSize = m_camera->GetSize();
-        ImGui::Text("Position: %f %f", camPos.x, camPos.y);
-        ImGui::Text("Size: %f %f", camSize.x, camSize.y);
-        ImGui::Text("Zoom: %f", m_camera->GetZoom());
+        // ImGui::Text("Position: %.1f %.1f", camPos.x, camPos.y);
+        if (ImGui::InputFloat2("Position", &camPos.x, "%.0f", ImGuiInputTextFlags_EnterReturnsTrue)) {
+          m_camera->SetPosition(camPos);
+        }
+        ImGui::Text("Size: %.1f %.1f", camSize.x, camSize.y);
+        ImGui::Text("Zoom: %.2f", m_camera->GetZoom());
 
         ImGui::TreePop();
       }
-      }
+      // if (ImGui::TreeNode("Memory")) {
+      //   {
+      //     std::lock_guard<std::mutex> lk(m_world->m_chunksMutex);
+      //     ImGui::Text("Chunks: %lu MB", m_world->m_chunks.size() * sizeof(Chunk) / 1024 / 1024);
+      //   }
+      //   // ImGui::Text("");
+      //   ImGui::TreePop();
+      // }
+    }
     ImGui::End();
   }
   void Game::ShowDebugToolsMenu() {
@@ -116,30 +166,20 @@ namespace px::disaster::gameplay {
   void Game::Draw() {
     EASY_BLOCK("Game::Draw", profiler::colors::Green700);
 
-    static float test[] = {
-      0.5f, -0.5f,
-     -0.5f, -0.5f,
-      0.0f,  0.5f
-    };
-    static graphics::VertexArray va;
-    static graphics::Shader shader;
-    static bool _once = false;
-    if (!_once) {
-      _once = true;
-      va.SetData(sizeof(test) / sizeof(*test), test);
-      shader.LoadFromFile("./data/shaders/chunk.vs", "./data/shaders/chunk.fs");
-    }
+    static graphics::Texture *texture = [] {
+      graphics::Texture *t = new graphics::Texture;
+      t->LoadFromFile("data/splash.png");
+      return t;
+    }();
+    static graphics::Sprite sprite(texture);
 
-    va.Draw(&shader);
-
-    return; 
-    // m_window.draw(*m_world);
-
-    // sf::Sprite tilemap(m_tilemap->GetTilemapTexture());
-    // m_window.draw(tilemap);
+    m_camera->Apply(graphics::Sprite::GetShader());
+    // sprite.SetPosition(m_camera->GetPosition());
+    sprite.Draw();
   }
+
   void Game::Update(float deltaTime) {
-    EASY_FUNCTION(profiler::colors::Red700);
+    EASY_BLOCK("Game::Update", profiler::colors::Red700);
     m_deltaTime = deltaTime;
 
     ProcessTicks();
@@ -149,44 +189,56 @@ namespace px::disaster::gameplay {
 
     // Move camera
     if (!imguiIO.WantCaptureMouse && !imguiIO.WantCaptureKeyboard) {
-      // float camZoom = m_camera->GetZoom();
-      // if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-      //   m_camera->Move(sf::Vector2f(0, -m_settings.cameraSpeed / camZoom * deltaTime));
-      // if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-      //   m_camera->Move(sf::Vector2f(0, m_settings.cameraSpeed / camZoom * deltaTime));
-      // if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-      //   m_camera->Move(sf::Vector2f(-m_settings.cameraSpeed / camZoom * deltaTime, 0));
-      // if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-      //   m_camera->Move(sf::Vector2f(m_settings.cameraSpeed / camZoom * deltaTime, 0));
-      // if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
-      //   m_camera->Zoom(1.0f + (0.1f * deltaTime));
-      // if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
-      //   m_camera->Zoom(1.0f - (0.1f * deltaTime));
+      float camZoom = m_camera->GetZoom();
+      Vector2f offset;
+      if (m_keyboard[SDLK_w])
+        offset.y += m_settings.cameraSpeed;
+      if (m_keyboard[SDLK_s])
+        offset.y -= m_settings.cameraSpeed;
+      if (m_keyboard[SDLK_d])
+        offset.x += m_settings.cameraSpeed;
+      if (m_keyboard[SDLK_a])
+        offset.x -= m_settings.cameraSpeed;
+
+      if (m_keyboard[SDLK_e])
+        m_camera->Zoom(1.0f + (0.1f * deltaTime));
+      if (m_keyboard[SDLK_q])
+        m_camera->Zoom(1.0f - (0.1f * deltaTime));
 
       if (m_mouseScroll > 0)
-        m_camera->Zoom(1.1f);
+        m_camera->SetZoom(camZoom + deltaTime);
       else if (m_mouseScroll < 0)
-        m_camera->Zoom(0.9f);
+        m_camera->SetZoom(camZoom - deltaTime);
+      
+      offset = offset / camZoom * deltaTime;
+      m_camera->Move(offset);
       m_mouseScroll = 0.0f;
     }
 
     m_camera->Update();
-
-    EASY_VALUE("CameraZoom", m_camera->GetZoom(), EASY_VIN("CameraZoom"));
   }
 
   void Game::ProcessEvent(system::Event &event) {
-    EASY_FUNCTION();
+    EASY_BLOCK("Game::ProcessEvent");
     switch (event.type) {
       case SDL_MOUSEWHEEL: {
         m_mouseScroll = event.wheel.y;
+        break;
+      }
+      case SDL_KEYDOWN: {
+        m_keyboard[event.key.keysym.sym] = true;
+        break;
+      }
+      case SDL_KEYUP: {
+        m_keyboard[event.key.keysym.sym] = false;
+        break;
       }
       default:
         break;
     }
   }
   void Game::ProcessChunksVisibility() {
-    EASY_FUNCTION();
+    EASY_BLOCK("Game::ProcessChunksVisibility");
     std::unique_lock<std::mutex> lk(m_world->GetChunksMutex());
     auto &chunks = m_world->GetChunks();
     Vector2f camPos = m_camera->GetPosition() / static_cast<float>(kChunkSize);
@@ -197,7 +249,8 @@ namespace px::disaster::gameplay {
     camSize.x = std::ceil(camSize.x);
     camSize.y = std::ceil(camSize.y);
 
-    // Unload chunks that are too far from the camera position
+    // Unload chunks that are too far from the camera position. 
+    // Only one chunk per frame
     EASY_BLOCK("Unload chunks");
     for (auto it = chunks.begin(); it != chunks.end(); ) {
       int chunkX = (*it)->GetX();
@@ -208,6 +261,7 @@ namespace px::disaster::gameplay {
         // it->Unload();
         it = chunks.erase(it);
         PX_LOG("Chunk %d %d deleted", chunkX, chunkY);
+        break;
       } 
       else {
         ++it;
@@ -216,19 +270,24 @@ namespace px::disaster::gameplay {
     EASY_END_BLOCK;
     lk.unlock();
 
-    // Load chunks that are close to the camera position
+    // Load chunks that are close to the camera position. 
+    // Requests only one chunk per frame
     EASY_BLOCK("Load chunks");
+    bool requested = false;
     for (int x = std::floor(camPos.x - camSize.x); x <= std::ceil(camPos.x + camSize.x); x++) {
       std::lock_guard<std::mutex> lk_b(m_world->m_chunksMutex);
       for (int y = std::floor(camPos.y - camSize.y); y <= std::ceil(camPos.y + camSize.y); y++) {
-        m_world->RequestChunkUnsafe(x, y);
+        if (m_world->RequestChunkUnsafe(x, y)) {
+          requested = true;
+          break;
+        }
       }
+      if (requested) break;
     }
-    EASY_END_BLOCK;
   }
 
   void Game::ProcessTicks() {
-    EASY_FUNCTION();
+    EASY_BLOCK("Game::ProcessTicks");
     // Update elapsed times
     for (int i = 0; i < 4; i++) {
       m_elapsedTimes[i] += m_deltaTime;
@@ -261,5 +320,8 @@ namespace px::disaster::gameplay {
 
   Tilemap &Game::GetTilemap() {
     return *m_tilemap;
+  }
+  World &Game::GetWorld() {
+    return *m_world;
   }
 }
