@@ -18,17 +18,16 @@ namespace px::disaster {
   }
 
   void Transformable::Scale(float factor) {
-    // m_transform.Scale(factor);
+    m_transform.Scale(factor);
   }
   void Transformable::SetSize(Vector2f size) {
-    // m_transform.SetSize(size);
+    m_transform.SetSize(size);
   }
   void Transformable::SetSize(float x, float y) {
-    // m_transform.SetSize(x, y);
+    m_transform.SetSize(x, y);
   }
   Vector2f Transformable::GetSize() const {
-    // return m_transform.GetSize();
-    return Vector2f(1, 1);
+    return m_transform.GetSize();
   }
 
   Transform &Transformable::GetTransform() {

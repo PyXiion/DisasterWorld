@@ -14,15 +14,19 @@ namespace px::disaster {
 
     void Move(Vector2f offset);
     void Move(float x, float y);
+    
+    void SetSize(Vector2f size);
+    void SetSize(float x, float y);
+    Vector2f GetSize() const;
 
     void Scale(Vector2f scale);
     void Scale(float factor);
 
     glm::mat4 GetMat4() const;
-    const glm::mat4 *GetMat4Ptr() const;    
 
   private:
-    glm::mat4 m_transform;
+    Vector2f m_position;
+    Vector2f m_size;
   };
 }
 
