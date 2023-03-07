@@ -2,7 +2,10 @@
 #include <cstdio>
 
 #ifdef __linux__
-# include <sys/sysinfo.h>
+# include <sys/resource.h>
+# include <stdio.h>
+# include <stdlib.h>
+# include <errno.h>
 # include <unistd.h>
 #endif
 
@@ -19,6 +22,7 @@
 
 size_t px::disaster::utils::GetUsedMemory(bool resident) {
 #if defined(__linux__)
+# if defined(NO_RUSAGE)
   // Ugh, getrusage doesn't work well on Linux.  Try grabbing info
   // directly from the /proc pseudo-filesystem.  Reading from
   // /proc/self/statm gives info on your own process, as one line of
@@ -34,6 +38,12 @@ size_t px::disaster::utils::GetUsedMemory(bool resident) {
     size = (size_t)vm * getpagesize();
   }
   return size;
+# else
+  struct rusage r_usage;
+  int ret = getrusage(RUSAGE_SELF,&r_usage);
+  // if (ret == 0) return 0;
+  return r_usage.ru_maxrss * 1024;
+# endif 
 
 #elif defined(__APPLE__)
   // Inspired by:
