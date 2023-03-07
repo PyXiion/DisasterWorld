@@ -81,14 +81,14 @@ namespace px::disaster::graphics {
   // }
   void Shader::SetUniform(const std::string &id, Color value) {
     int uniform = GetUniform(id);
-    glUniform4f(uniform, value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f);
+    glUniform3f(uniform, value.r / 255.0f, value.g / 255.0f, value.b / 255.0f);
   }
   void Shader::SetUniform(const std::string &id, const Transform &value) {
     int uniform = GetUniform(id);
-    glUniformMatrix3fv(uniform, 1, GL_FALSE, glm::value_ptr(*value.GetMat4Ptr()));
+    glUniformMatrix4fv(uniform, 1, GL_FALSE, glm::value_ptr(value.GetMat4()));
   }
   void Shader::SetUniform(const std::string &id, const glm::mat4 &value) {
     int uniform = GetUniform(id);
-    glUniformMatrix3fv(uniform, 1, GL_FALSE, glm::value_ptr(value));
+    glUniformMatrix4fv(uniform, 1 , GL_FALSE, glm::value_ptr(value));
   }
 }
