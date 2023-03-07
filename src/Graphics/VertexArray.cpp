@@ -119,12 +119,12 @@ namespace px::disaster::graphics {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
 
-  void VertexArray::Draw(const Shader *shader) const {
+  void VertexArray::Draw(const Shader *shader, DrawMode mode) const {
     if (!m_VBO[0] || !m_vertexCount) return;
     if (shader)
       shader->Use();
     glBindVertexArray(m_VAO);
-    glDrawArrays(GL_QUADS, 0, m_vertexCount);
+    glDrawArrays((mode == DrawMode_TRIANGLES) ? GL_TRIANGLES : GL_QUADS, 0, m_vertexCount);
     glBindVertexArray(0);
   }
 }

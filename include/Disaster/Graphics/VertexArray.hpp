@@ -22,6 +22,10 @@ namespace px::disaster::graphics {
       VAFlag_RGB                      = 0,
       VAFlag_RGBA                     = 1 << 2,
     };
+    enum DrawMode {
+      DrawMode_TRIANGLES,
+      DrawMode_SQUADS
+    };
 
   private:
     unsigned int m_VBO[3];
@@ -57,7 +61,7 @@ namespace px::disaster::graphics {
       SetData(VSize, (vertices) ? vertices->data() : nullptr, (textureCoords) ? textureCoords->data() : nullptr, (colors) ? colors->data() : nullptr);
     }
 
-    void Draw(const Shader *shader = nullptr) const;
+    void Draw(const Shader *shader = nullptr, DrawMode mode = DrawMode_TRIANGLES) const;
   };
 }
 
