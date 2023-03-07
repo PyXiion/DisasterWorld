@@ -1,22 +1,23 @@
 #include <Disaster/Gameplay/Camera.hpp>
+#include <Disaster/Program.hpp>
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <easy/profiler.h>
 
 namespace px::disaster::gameplay {
   Camera::Camera() 
-    : m_zoom(1.0f) {
-      m_projection = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, 0.1f, 100.0f);
+    : m_zoom(1.0f), m_window(Program::GetInstance().GetWindow()) {
       Update();
     }
   
   void Camera::Update() {
-    // sf::Vector2u windowSize = m_window.getSize();
-    // m_view.setSize(windowSize.x / m_zoom, windowSize.y / m_zoom);
-    // m_view.setCenter(m_position);
-    m_view = glm::lookAt(glm::vec3(m_position.x, m_position.y, 0.0f),
-                          glm::vec3(0.0f, 0.0f, 0.0f),
-                          glm::vec3(0.0f, 1.0f, 0.0f));
+    EASY_BLOCK("Camera::Update");
+    if (m_zoom < 0.5f) m_zoom = 0.5f;
 
-    // m_window.setView(m_view);
+    Vector2f winSize = m_window.GetSize().Convert<float>();
+    m_size = winSize / m_zoom;
+    m_projection = glm::ortho<float>(0, m_size.x, 0, m_size.y, -1.0f, 1.0f);
+    m_view = glm::translate(glm::mat4(1.0f), glm::vec3(-m_position.x + m_size.x / 2.0f, -m_position.y + m_size.y / 2.0f, 0.0f));
   }
 
   void Camera::Move(Vector2f offset) {
@@ -34,13 +35,17 @@ namespace px::disaster::gameplay {
   }
 
   Vector2f Camera::GetSize() const {
-    // return m_view.getSize();
-    return Vector2f();
+    return m_size;
   }
   Vector2f Camera::GetPosition() const {
     return m_position;
   }
   float Camera::GetZoom() const {
     return m_zoom;
+  }
+
+  void Camera::Apply(graphics::Shader &shader) const {
+    shader.SetUniform("projection", m_projection);
+    shader.SetUniform("view", m_view);
   }
 }

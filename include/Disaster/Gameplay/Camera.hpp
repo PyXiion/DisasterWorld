@@ -1,17 +1,12 @@
 #ifndef PX_DISASTER_GAMEPLAY_CAMERA_HPP
 #define PX_DISASTER_GAMEPLAY_CAMERA_HPP
+#include <Disaster/Graphics/Shader.hpp>
+#include <Disaster/System/Window.hpp>
 #include <Disaster/System/Vector2.hpp>
 #include <glm/glm.hpp>
 
 namespace px::disaster::gameplay {
   class Camera {
-  private:
-    glm::mat4 m_projection;
-    glm::mat4 m_view;
-
-    Vector2f m_position;
-    float m_zoom;
-
   public:
     Camera();
 
@@ -26,6 +21,18 @@ namespace px::disaster::gameplay {
     Vector2f GetSize() const;
     Vector2f GetPosition() const;
     float GetZoom() const;
+
+    void Apply(graphics::Shader &shader) const;
+
+  private:
+    glm::mat4 m_projection;
+    glm::mat4 m_view;
+
+    Vector2f m_position;
+    Vector2f m_size;
+    float m_zoom;
+
+    system::Window &m_window;
   };
 }
 
