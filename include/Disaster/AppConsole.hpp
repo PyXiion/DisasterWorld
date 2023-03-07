@@ -89,6 +89,7 @@ namespace px::disaster {
     void AddFunction(std::string &arg);
     void DeleteFunction(std::string &arg);
     void ListVariables();
+    void CheckMemoryUsage();
 
     /// @brief Manages console input history and auto-complete commands on Tab
     int TextEditCallback(ImGuiInputTextCallbackData *data);

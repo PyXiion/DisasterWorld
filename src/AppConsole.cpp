@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include <Disaster/Program.hpp>
+#include <Disaster/Utils/RamUsage.hpp>
 #include <angelscript/scripthelper.h>
 #include <imgui/imgui.h>
 #include <easy/profiler.h>
@@ -34,7 +35,7 @@ namespace px::disaster {
 
     m_title = "Console";
     m_commands = {
-      "help", "exec", "eval", "addVar", "delVar", "addFunc", "delFunc", "listVars", "listFuncs",
+      "help", "exec", "eval", "addVar", "delVar", "addFunc", "delFunc", "listVars", "listFuncs", "memoryUsage"
     };
     m_historyPos = -1;
 
@@ -44,7 +45,7 @@ namespace px::disaster {
   }
 
   void AppConsole::ConfigureEngine() {
-    EASY_FUNCTION();
+    EASY_BLOCK("AppConsole::ConfigureEngine");
     int r;
     // Eval printing
     r = m_scriptEngine->RegisterGlobalFunction("void _grab(bool)", asMETHODPR(AppConsole, _Grab, (bool), void), asCALL_THISCALL_ASGLOBAL, this); assert(r >= 0);
@@ -93,7 +94,7 @@ namespace px::disaster {
   }
 
   void AppConsole::Draw() {
-    EASY_FUNCTION();
+    EASY_BLOCK("AppConsole::Draw");
     if (!m_open) return;
     ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin(m_title.c_str(), &m_open)) {
@@ -303,6 +304,7 @@ namespace px::disaster {
     if (!(m_history.size() > 1 && m_history.back() == commandLine))
       m_history.push_back(commandLine);
 
+    // split the line into 2 parts (the command itself and the argument)
     std::string cmd, arg;
     size_t pos;
 		if( (pos = commandLine.find(" ")) != std::string::npos ) {
@@ -313,6 +315,7 @@ namespace px::disaster {
 			cmd = commandLine;
 			arg = "";
 		}
+    // command to lower case
     std::transform(cmd.begin(), cmd.end(), cmd.begin(),
     [](unsigned char c){ return std::tolower(c); });
     
@@ -325,7 +328,11 @@ namespace px::disaster {
       ClearLog();
       return;
     }
-    // AngelScript
+    else if (cmd == "memoryusage") {
+      CheckMemoryUsage();
+      return;
+    }
+    // AngelScript commands
 #define APP_CONSOLE_AS_COMMAND(commandName, functionCall, usage)                                      \
     else if (cmd == commandName) {                                                                    \
       if (arg.empty()) {                                                                              \
@@ -510,6 +517,25 @@ namespace px::disaster {
         AddLog("%s", mod->GetGlobalVarDeclaration(n));
       }
     }
+  }
+  void AppConsole::CheckMemoryUsage() {
+    size_t totalUsage = utils::GetUsedMemory();
+    size_t chunksUsage = 0;
+
+    // Calc chunks usage
+    {
+      gameplay::World &world = Program::GetInstance().GetGame().GetWorld();
+      size_t chunksCount;
+      {
+        std::lock_guard<std::mutex> lk(world.GetChunksMutex());
+        chunksCount = world.GetChunks().size();
+      }
+      chunksUsage = chunksCount * sizeof(gameplay::Chunk);
+    }
+    
+
+    AddLog("Total usage: %lu MB", totalUsage / 1024 / 1024);
+    AddLog("Chunks usage: %lu MB", chunksUsage / 1024 / 1024);
   }
 
   void AppConsole::_Grab(int v) {
