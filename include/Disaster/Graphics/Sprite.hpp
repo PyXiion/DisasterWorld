@@ -9,15 +9,17 @@
 namespace px::disaster::graphics {
   class Sprite : public Transformable {
   public:
-    Sprite(Texture *texture = nullptr, Color color = Color(255, 255, 255, 255));
+    Sprite(const Texture *texture = nullptr, Color color = Color(255, 255, 255, 255));
 
     void Draw() const;
 
+    static Shader &GetShader();
+
   private:
-    Texture *m_texture;
+    const Texture *m_texture;
     Color m_color;
 
-    static Shader *shader;
+    static Shader shader;
     static std::array<float, 24> vertices;
     static unsigned int vao;
     static unsigned int vbo;
