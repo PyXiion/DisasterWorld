@@ -46,7 +46,6 @@ namespace px::disaster::gameplay {
     /// @brief Get a chunk by coordinates, creates new if it does not exist
     /// @param x X world coordinate
     /// @param y Y world coordinate
-    /// @param safe enable tread-safe
     /// @return Pointer to a chunk
     Chunk *GetChunk(float x, float y);
 
