@@ -9,7 +9,7 @@ namespace px::disaster::gameplay {
   }
 
   void BaseWorldGenerator::GenerateChunk(Chunk &chunk) {
-    EASY_FUNCTION();
+    EASY_BLOCK("BaseWorldGenerator::GenerateChunk");
     for (int x = 0; x < kChunkSize; x++) {
       for (int y = 0; y < kChunkSize; y++) {
         float height = m_noisePerlin.GetNoise<float>(chunk.GetX() * kChunkSize + x, chunk.GetY() * kChunkSize + y);
