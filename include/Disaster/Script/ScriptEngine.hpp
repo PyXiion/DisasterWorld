@@ -4,14 +4,15 @@
 
 namespace px::disaster::script {
   class ScriptEngine {
-  private:
-    asIScriptEngine *m_engine;
-
   public:
     ScriptEngine();
     ~ScriptEngine();
 
     asIScriptEngine *Get();
+    
+  private:
+    asIScriptEngine *m_engine;
+
   };
 }
 
