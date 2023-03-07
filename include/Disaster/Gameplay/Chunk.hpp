@@ -21,22 +21,6 @@ namespace px::disaster {
 
   namespace gameplay {
     class Chunk : public ITickable, public utils::ISerializable {
-    private:
-      TileID m_tiles[kChunkSize][kChunkSize];
-      std::array<Vector2f, kChunkSize * kChunkSize * 4> m_textureCoords;
-      Transform m_transform;
-
-      int m_x;
-      int m_y;
-
-      bool m_wasEdited;
-      std::unique_ptr<std::atomic_bool> m_inQueue;
-
-      const graphics::Texture *m_texture;
-
-      static std::array<Vector2f, kChunkSize * kChunkSize * 4> gridVertices;
-      static graphics::VertexArray gridVA;
-
     public:
       Chunk(int x, int y, bool inQueue = false);
 
@@ -86,6 +70,22 @@ namespace px::disaster {
 
       void Serialize(utils::MemoryStream &stream) const override;
       void Deserialize(utils::MemoryStream &stream) override;
+      
+    private:
+      TileID m_tiles[kChunkSize][kChunkSize];
+      std::array<Vector2f, kChunkSize * kChunkSize * 4> m_textureCoords;
+      Transform m_transform;
+
+      int m_x;
+      int m_y;
+
+      bool m_wasEdited;
+      std::unique_ptr<std::atomic_bool> m_inQueue;
+
+      const graphics::Texture *m_texture;
+
+      static std::array<Vector2f, kChunkSize * kChunkSize * 4> gridVertices;
+      static graphics::VertexArray gridVA;
     };
   }
 }
