@@ -23,6 +23,8 @@ namespace px::disaster::graphics {
     void Use() const;
     unsigned int GetHandle() const;
 
+    size_t SizeOfPixel() const;
+
   private:
     unsigned int m_texture;
     Vector2u m_size;

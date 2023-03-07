@@ -28,8 +28,10 @@ namespace px::disaster::graphics {
     glBindTexture(GL_TEXTURE_2D, 0);
   }
   void Texture::LoadFromFile(const std::string &filename) {
+    stbi_set_flip_vertically_on_load(true);
     int width, height, nrChannels;
     unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrChannels, 0);
+    GLenum channels = (nrChannels == STBI_rgb) ? GL_RGB : GL_RGBA;
 
     if (!data)
       throw std::runtime_error("Failed to load texture.");
@@ -46,7 +48,7 @@ namespace px::disaster::graphics {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, channels, width, height, 0, channels, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -62,5 +64,9 @@ namespace px::disaster::graphics {
   }
   unsigned int Texture::GetHandle() const {
     return m_texture;
+  }
+
+  size_t Texture::SizeOfPixel() const {
+    return ((m_flags & TextureFlags_RGBA) ? 4 : 3) * sizeof(uint8_t);
   }
 }
