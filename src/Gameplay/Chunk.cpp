@@ -5,6 +5,7 @@
 #include <Disaster/Program.hpp>
 #include <easy/profiler.h>
 
+
 namespace px::disaster::gameplay {
   std::array<Vector2f, kChunkSize * kChunkSize * 4> Chunk::gridVertices;
   graphics::VertexArray Chunk::gridVA;
@@ -19,6 +20,7 @@ namespace px::disaster::gameplay {
     m_texture = &Program::GetInstance().GetGame().GetTilemap().GetTilemapTexture();
 
     static auto _executeOnce = [] -> char {
+      EASY_BLOCK("Generating chunk vertices");
       for (int i = 0; i < kChunkSize; ++i) {
         for (int j = 0; j < kChunkSize; ++j) {
           // Define position of the tile
