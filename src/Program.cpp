@@ -1,6 +1,7 @@
 #include <Disaster/Program.hpp>
 #include <thread>
 
+#include <Disaster/Utils/ResourceManager.hpp>
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_sdl.h>
 #include <imgui/imgui_impl_opengl3.h>
@@ -34,12 +35,13 @@ namespace px::disaster {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    ResourceManager::AddFolder("./data");
+    ResourceManager::AddFolder("./mods");
+
     m_scriptEngine = new script::ScriptEngine;
     m_console = new AppConsole;
 
     PX_LOG("Console loaded");
-
-    m_textureManager = new utils::TextureManager;
 
     m_game = new gameplay::Game(*this);
     m_game->Init();
@@ -108,9 +110,6 @@ namespace px::disaster {
   }
   gameplay::Game &Program::GetGame() {
     return *m_game;
-  }
-  utils::TextureManager &Program::GetTextureManager() {
-    return *m_textureManager;
   }
   script::ScriptEngine &Program::GetScriptEngine() {
     return *m_scriptEngine;

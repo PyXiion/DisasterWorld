@@ -2,7 +2,6 @@
 #define PX_DISASTER_PROGRAM_HPP
 #include <Disaster/Gameplay/Game.hpp>
 #include <Disaster/System/Window.hpp>
-#include <Disaster/Utils/TextureManager.hpp>
 #include <Disaster/AppConsole.hpp>
 
 namespace px::disaster {
@@ -11,7 +10,6 @@ namespace px::disaster {
   private:
     system::Window m_window;
 
-    utils::TextureManager *m_textureManager;
     gameplay::Game *m_game;
 
     AppConsole *m_console;
@@ -23,7 +21,6 @@ namespace px::disaster {
     
     system::Window &GetWindow();
     gameplay::Game &GetGame();
-    utils::TextureManager &GetTextureManager();
     script::ScriptEngine &GetScriptEngine();
 
     static Program &GetInstance();

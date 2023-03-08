@@ -2,17 +2,18 @@
 
 #include <algorithm>
 
-#include <Disaster/Graphics/Sprite.hpp>
 #include <Disaster/AppConsole.hpp>
+#include <Disaster/Graphics/Sprite.hpp>
+#include <Disaster/Utils/ResourceManager.hpp>
 #include <yaml-cpp/yaml.h>
 #include <easy/profiler.h>
 
 namespace px::disaster::gameplay {
-  Tilemap::Tilemap(utils::TextureManager &textureManager) : m_textureManager(textureManager) {
+  Tilemap::Tilemap() {
   }
   
   void Tilemap::FitTiles() {
-    EASY_FUNCTION();
+    EASY_BLOCK("Tilemap::FitTiles");
     // Sort textures by area (largest first)
     std::sort(m_tiles.begin(), m_tiles.end(), [](const TileInfo &a, const TileInfo &b) {
       return a.texture->GetSize().x * a.texture->GetSize().y > b.texture->GetSize().x * b.texture->GetSize().y;
@@ -64,6 +65,7 @@ namespace px::disaster::gameplay {
     }
 
     // Draw
+    EASY_BLOCK("Draw tiles on the tileset");
     m_tilemapTexture.Create(textureSize.x, textureSize.y);
     m_tilemapTexture.Begin();
     for (size_t i = 0; i < m_tiles.size(); i++) {
@@ -76,7 +78,7 @@ namespace px::disaster::gameplay {
   }
 
   void Tilemap::LoadTilemap(std::string configurationFilename) {
-    EASY_FUNCTION();
+    EASY_BLOCK("Tilemap::LoadTilemap");
     PX_LOG("Loading tilemap \"%s\"", configurationFilename.c_str());
     YAML::Node config = YAML::LoadFile(configurationFilename);
     // Load config
@@ -88,9 +90,7 @@ namespace px::disaster::gameplay {
         info.id = it->first.as<std::string>();
         info.textureId = it->second.as<std::string>();
 
-        if (!m_textureManager.TextureExists(info.textureId))
-          throw std::runtime_error("Texture \"" + info.textureId + "\" does not exists.");
-        info.texture = &m_textureManager.GetTexture(info.textureId);
+        info.texture = &ResourceManager::GetTexture(info.textureId);
 
         m_tiles.push_back(info);
         PX_LOG("Loaded %s tile (texture ID: %s)", info.id.c_str(), info.textureId.c_str());

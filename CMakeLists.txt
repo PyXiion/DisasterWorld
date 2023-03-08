@@ -42,8 +42,8 @@ set(SRC
   src/Script/ScriptEngine.cpp
 
   src/Utils/MemoryStream.cpp
-  src/Utils/TextureManager.cpp
   src/Utils/RamUsage.cpp
+  src/Utils/ResourceManager.cpp
 
   include/Disaster/System/Vector2.hpp
 )

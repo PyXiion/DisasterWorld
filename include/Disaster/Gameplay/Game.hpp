@@ -9,7 +9,6 @@
 #include <Disaster/Gameplay/Tilemap.hpp>
 #include <Disaster/Script/ScriptEngine.hpp>
 #include <Disaster/System/Window.hpp>
-#include <Disaster/Utils/TextureManager.hpp>
 
 namespace px::disaster {
   class Program;
@@ -53,7 +52,6 @@ namespace px::disaster {
       World *m_world;
       Camera *m_camera;
 
-      utils::TextureManager &m_textureManager;
       Tilemap *m_tilemap;
 
       float m_mouseScroll;

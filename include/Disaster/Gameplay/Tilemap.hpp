@@ -8,7 +8,6 @@
 #include <Disaster/Gameplay/TileInfo.hpp>
 #include <Disaster/Graphics/RenderTexture.hpp>
 #include <Disaster/System/Rect.hpp>
-#include <Disaster/Utils/TextureManager.hpp>
 #include <SFML/Graphics.hpp>
 
 namespace px::disaster::gameplay {
@@ -20,12 +19,10 @@ namespace px::disaster::gameplay {
     graphics::RenderTexture m_tilemapTexture;
     std::vector<TileInfo> m_tiles;
 
-    utils::TextureManager &m_textureManager;
-
     void FitTiles();
 
   public:
-    Tilemap(utils::TextureManager &textureManager);
+    Tilemap();
 
     /// @brief Load tilemap from configuration file
     /// @param configurationFilename path to YAML configuration file

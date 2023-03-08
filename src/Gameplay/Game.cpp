@@ -6,6 +6,7 @@
 #include <Disaster/Graphics/Sprite.hpp>
 #include <Disaster/Graphics/VertexArray.hpp>
 #include <Disaster/Utils/RamUsage.hpp>
+#include <Disaster/Utils/ResourceManager.hpp>
 #include <imgui/imgui.h>
 #include <easy/profiler.h>
 #include <easy/arbitrary_value.h>
@@ -16,7 +17,6 @@ namespace px::disaster::gameplay {
   Game::Game(Program &program) 
     : m_program(program), 
       m_window(program.GetWindow()), 
-      m_textureManager(program.GetTextureManager()),
       m_scriptEngine(program.GetScriptEngine()),
       m_tickSpeed(1.0f), 
       m_tickMask(0), 
@@ -29,16 +29,8 @@ namespace px::disaster::gameplay {
     EASY_BLOCK("Game::Init", profiler::colors::Blue700);
     // Load all core textures
     PX_LOG("Loading Core textures");
-    
-    EASY_BLOCK("Loading textures");
-    for (auto const &entry : fs::recursive_directory_iterator("./mods/core/textures")) {
-      if (!fs::is_regular_file(entry.path()) || entry.path().extension() != ".png")
-        continue;
-      m_textureManager.LoadTexture(entry.path());
-    }
-    EASY_END_BLOCK;
 
-    m_tilemap = new Tilemap(m_textureManager);
+    m_tilemap = new Tilemap();
     m_tilemap->LoadTilemap("./mods/core/tilemaps/general.yaml");
 
     m_camera = new Camera();
@@ -166,12 +158,7 @@ namespace px::disaster::gameplay {
   void Game::Draw() {
     EASY_BLOCK("Game::Draw", profiler::colors::Green700);
 
-    static graphics::Texture *texture = [] {
-      graphics::Texture *t = new graphics::Texture;
-      t->LoadFromFile("data/splash.png");
-      return t;
-    }();
-    static graphics::Sprite sprite(texture);
+    static graphics::Sprite sprite(&ResourceManager::GetTexture("splash"));
 
     m_camera->Apply(graphics::Sprite::GetShader());
     // sprite.SetPosition(m_camera->GetPosition());
