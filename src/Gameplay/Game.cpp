@@ -39,36 +39,6 @@ namespace px::disaster::gameplay {
     PX_LOG("World is initialising");
     m_world = new World();
     PX_LOG("World initialised");
-
-    ConfigureScriptEngine();
-  }
-
-  void Game::ConfigureScriptEngine() {
-    asIScriptEngine *engine = m_scriptEngine.Get();
-    int r;
-
-    // Chunk object
-    r = engine->RegisterObjectType("CChunk", 0, asOBJ_REF | asOBJ_NOCOUNT); assert(r >= 0);
-    r = engine->RegisterTypedef("TileID", "uint16"); assert(r >= 0);
-
-    r = engine->RegisterObjectMethod("CChunk", "TileID GetTile(int x, int y) const", asMETHOD(Chunk, GetTile), asCALL_THISCALL); assert(r >= 0);
-    r = engine->RegisterObjectMethod("CChunk", "void SetTile(int x, int y, TileID id)", asMETHOD(Chunk, SetTile), asCALL_THISCALL); assert(r >= 0);
-
-    r = engine->RegisterObjectMethod("CChunk", "int get_x() const", asMETHOD(Chunk, GetX), asCALL_THISCALL); assert(r >= 0);
-    r = engine->RegisterObjectMethod("CChunk", "int get_y() const", asMETHOD(Chunk, GetY), asCALL_THISCALL); assert(r >= 0);
-
-    // World API
-    r = engine->RegisterObjectType("CWorld", 0, asOBJ_REF | asOBJ_NOHANDLE); assert(r >= 0);
-
-    r = engine->RegisterObjectMethod("CWorld", "CChunk @GetChunk(float x, float y)", asMETHOD(World, GetChunk), asCALL_THISCALL); assert(r >= 0);
-    r = engine->RegisterObjectMethod("CWorld", "bool RequestChunk(int x, int y)", asMETHOD(World, RequestChunk), asCALL_THISCALL); assert(r >= 0);
-
-    // Game API
-    r = engine->RegisterObjectType("CGame", 0, asOBJ_REF | asOBJ_NOHANDLE); assert(r >= 0);
-
-    r = engine->RegisterObjectMethod("CGame", "CWorld &get_world() property", asMETHOD(Game, GetWorld), asCALL_THISCALL); assert(r >= 0);
-
-    r = engine->RegisterGlobalProperty("CGame game", this); assert(r >= 0);
   }
 
   void Game::DrawUI() {

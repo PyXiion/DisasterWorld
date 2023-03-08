@@ -1,6 +1,7 @@
 #include <Disaster/Program.hpp>
 #include <thread>
 
+#include <Disaster/Script/Bindings.hpp>
 #include <Disaster/Utils/ResourceManager.hpp>
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_sdl.h>
@@ -39,12 +40,15 @@ namespace px::disaster {
     ResourceManager::AddFolder("./mods");
 
     m_scriptEngine = new script::ScriptEngine;
+
     m_console = new AppConsole;
 
     PX_LOG("Console loaded");
 
     m_game = new gameplay::Game(*this);
     m_game->Init();
+    
+    script::ConfigureEngine(*m_scriptEngine);
 
     // Some debug data
     PX_LOG("Max real thread count: %d", std::thread::hardware_concurrency());

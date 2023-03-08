@@ -40,6 +40,7 @@ set(SRC
   src/Gameplay/BaseWorldGenerator.cpp
 
   src/Script/ScriptEngine.cpp
+  src/Script/Bindings.cpp
 
   src/Utils/MemoryStream.cpp
   src/Utils/RamUsage.cpp
