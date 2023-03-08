@@ -1,11 +1,3 @@
-# DisasterWorld - general tilemap
-# Author: PyXiion
-# Version: 0.1a
-# Website: https://pyxiion.ru
-# Last modified: 23.02.2023
-
-# You can use this config as a template for your own.
 tiles:
   grass: core.textures.grass
   stone: core.textures.stone
-  # basic_wall: basic_wall.yaml
