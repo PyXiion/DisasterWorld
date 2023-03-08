@@ -521,6 +521,29 @@ namespace px::disaster {
   void AppConsole::CheckMemoryUsage() {
     size_t totalUsage = utils::GetUsedMemory();
     size_t chunksUsage = 0;
+    size_t consoleUsage = 0;
+    size_t angelscriptUsage = 0;
+
+    auto ToHumanFormat = [](size_t bytes) -> auto {
+      float size = static_cast<float>(bytes);
+      std::string postfix = "B";
+      if (size >= 1024.0f) {
+        size /= 1024.0f;
+        postfix = "KB";
+      }
+      if (size >= 1024.0f) {
+        size /= 1024.0f;
+        postfix = "MB";
+      }
+      if (size >= 1024.0f) {
+        size /= 1024.0f;
+        postfix = "GB";
+      }
+      std::string ret(10, '\0');
+      auto written = std::snprintf(ret.data(), ret.size(), "%.1f %s", size, postfix.c_str());
+      ret.resize(written);
+      return ret;
+    };
 
     // Calc chunks usage
     {
@@ -532,10 +555,32 @@ namespace px::disaster {
       }
       chunksUsage = chunksCount * sizeof(gameplay::Chunk);
     }
-    
+    // Calc console usage
+    {
+      for (const auto &elem : m_items) {
+        consoleUsage += elem.capacity();
+      }
+      for (const auto &elem : m_history) {
+        consoleUsage += elem.capacity();
+      }
+    }
+    // Calc AngelScript usage
+    {
+      asUINT count;
+      m_scriptEngine->GetGCStatistics(&count);
+      asITypeInfo *typeInfo;
+      for (int i = 0; i < count; i++) {
+        int r = m_scriptEngine->GetObjectInGC(i, 0, 0, &typeInfo);
+        if (r >= 0) {
+          angelscriptUsage += static_cast<size_t>(typeInfo->GetSize());
+        }
+      }
+    }
 
-    AddLog("Total usage: %lu MB", totalUsage / 1024 / 1024);
-    AddLog("Chunks usage: %lu MB", chunksUsage / 1024 / 1024);
+    AddLog("Total usage: %s", ToHumanFormat(totalUsage).c_str());
+    AddLog("Chunks usage: %s", ToHumanFormat(chunksUsage).c_str());
+    AddLog("Console usage: %s", ToHumanFormat(consoleUsage).c_str());
+    AddLog("AngelScript usage: %s", ToHumanFormat(angelscriptUsage).c_str());
   }
 
   void AppConsole::_Grab(int v) {
