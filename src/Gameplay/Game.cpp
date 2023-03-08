@@ -60,13 +60,13 @@ namespace px::disaster::gameplay {
     // World API
     r = engine->RegisterObjectType("CWorld", 0, asOBJ_REF | asOBJ_NOHANDLE); assert(r >= 0);
 
-    r = engine->RegisterObjectMethod("CWorld", "CChunk @GetChunkAt(float x, float y)", asMETHOD(World, GetChunk), asCALL_THISCALL); assert(r >= 0);
-    r = engine->RegisterObjectMethod("CWorld", "bool RequestChunkAt(int x, int y)", asMETHOD(World, RequestChunk), asCALL_THISCALL); assert(r >= 0);
+    r = engine->RegisterObjectMethod("CWorld", "CChunk @GetChunk(float x, float y)", asMETHOD(World, GetChunk), asCALL_THISCALL); assert(r >= 0);
+    r = engine->RegisterObjectMethod("CWorld", "bool RequestChunk(int x, int y)", asMETHOD(World, RequestChunk), asCALL_THISCALL); assert(r >= 0);
 
     // Game API
     r = engine->RegisterObjectType("CGame", 0, asOBJ_REF | asOBJ_NOHANDLE); assert(r >= 0);
 
-    r = engine->RegisterObjectMethod("CGame", "CWorld &get_world() property", asMETHOD(Game, GetTilemap), asCALL_THISCALL); assert(r >= 0);
+    r = engine->RegisterObjectMethod("CGame", "CWorld &get_world() property", asMETHOD(Game, GetWorld), asCALL_THISCALL); assert(r >= 0);
 
     r = engine->RegisterGlobalProperty("CGame game", this); assert(r >= 0);
   }
