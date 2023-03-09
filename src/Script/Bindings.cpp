@@ -14,16 +14,24 @@
 namespace px::disaster::script {
   using namespace gameplay;
 
+  /// @brief Proxy template constructor of any class for AngelScript
+  /// @tparam T class type
+  /// @tparam ...TArgs class constuctor arguments
   template<class T, class ...TArgs>
   void Constructor(void *memory, TArgs... args) {
     new(memory) T(args...);
   }
+  
+  /// @brief Proxy template destructor of any class for AngelScript
+  /// @tparam T class type
   template<class T>
   void Destructor(void *memory) {
     reinterpret_cast<T*>(memory)->~T();
   }
 
   // System section
+  /// @brief Registration of Color type in AngelScript. The constructor and members are registered.
+  /// @param engine AngelScript engine
   void RegisterColor(asIScriptEngine *engine) {
     int r;
     AS_CHECK(engine->RegisterObjectType("Color", sizeof(Color), asOBJ_VALUE | asOBJ_POD));
@@ -38,6 +46,18 @@ namespace px::disaster::script {
     AS_CHECK(engine->RegisterObjectProperty("Color", "ColorComponent b", asOFFSET(Color, b)));
     AS_CHECK(engine->RegisterObjectProperty("Color", "ColorComponent a", asOFFSET(Color, a)));
   }
+  
+  /// @brief Registration of Vector2 in AngelScript. 
+  /// Registers constructor, members and overloaded operators. 
+  /// You need to specify T - type of members (Vector<float> = Vector2f), 
+  /// the name by which the class will be registered, name of vector with similar type of members, names of member types 
+  /// for AngelScript and flags for additional AngelScript flags (such as asOBJ_APP_CLASS_ALLFLOATS for FloatRect)
+  /// @tparam T rect type
+  /// @param name registered name
+  /// @param tname name of member type
+  /// @param vname name of vector with similar type of members (for FloatRect is Vector2f)
+  /// @param engine AngelScript engine
+  /// @param flags Additional flags
   template<class T>
   void RegisterVector(std::string name, std::string tname, asIScriptEngine *engine, asDWORD flags) {
     int r;
@@ -68,6 +88,17 @@ namespace px::disaster::script {
     AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " x").c_str(), asOFFSET(Vector2<T>, x)));
     AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " y").c_str(), asOFFSET(Vector2<T>, y)));
   }
+  
+  /// @brief Registration of Rect in AngelScript. 
+  /// Registers constructor, members and methods. 
+  /// You need to specify T - type of members (Rect<float> = FloatRect), 
+  /// the name by which the class will be registered, name of , names of member types 
+  /// for AngelScript and flags for additional AngelScript flags (such as asOBJ_APP_CLASS_ALLFLOATS for Vector2f)
+  /// @tparam T vector type
+  /// @param name registered name
+  /// @param tname name of member type
+  /// @param engine AngelScript engine
+  /// @param flags Additional flags
   template<class T>
   void RegisterRect(std::string name, std::string vname, std::string tname, asIScriptEngine *engine, asDWORD flags) {
     int r;
@@ -93,6 +124,9 @@ namespace px::disaster::script {
     AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " width").c_str(), asOFFSET(Rect<T>, width)));
     AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " height").c_str(), asOFFSET(Rect<T>, height)));
   }
+  
+  /// @brief Registers all classes from the Disaster/System in AngelScript
+  /// @param engine AngelScript engine
   void RegisterSystem(asIScriptEngine *engine) {
     RegisterColor(engine);
 
@@ -107,6 +141,9 @@ namespace px::disaster::script {
   }
 
   // Gameplay section
+  /// @brief Register the Chunk class as CChunk (the prefix means the class can only be created from C++ code, 
+  /// i.e. no constructors or AngelScript doesn't handle this object)
+  /// @param engine AngelScript engine
   void RegisterChunk(asIScriptEngine *engine) {
     int r;
 
@@ -118,21 +155,30 @@ namespace px::disaster::script {
     AS_CHECK(engine->RegisterObjectMethod("CChunk", "int get_x() const", asMETHOD(Chunk, GetX), asCALL_THISCALL));
     AS_CHECK(engine->RegisterObjectMethod("CChunk", "int get_y() const", asMETHOD(Chunk, GetY), asCALL_THISCALL));
   }
+  
+  /// @brief Registers the World class as CWorld (the prefix means the class can only be created from C++ code, 
+  /// i.e. no constructors or AngelScript doesn't handle this object)
+  /// @param engine AngelScript engine
   void RegisterWorld(asIScriptEngine *engine) {
     int r;
-
     AS_CHECK(engine->RegisterObjectType("CWorld", 0, asOBJ_REF | asOBJ_NOHANDLE));
 
     AS_CHECK(engine->RegisterObjectMethod("CWorld", "CChunk @GetChunk(float x, float y)", asMETHOD(World, GetChunk), asCALL_THISCALL));
     AS_CHECK(engine->RegisterObjectMethod("CWorld", "bool RequestChunk(int x, int y)", asMETHOD(World, RequestChunk), asCALL_THISCALL));
   }
+  
+  /// @brief Registers the Game class as CGame (the prefix means the class can only be created from C++ code, 
+  /// i.e. no constructors or AngelScript doesn't handle this object)
+  /// @param engine AngelScript engine
   void RegisterGame(asIScriptEngine *engine) {
     int r;
-
     AS_CHECK(engine->RegisterObjectType("CGame", 0, asOBJ_REF | asOBJ_NOHANDLE));
 
     AS_CHECK(engine->RegisterObjectMethod("CGame", "CWorld &get_world() property", asMETHOD(Game, GetWorld), asCALL_THISCALL));
   }
+  
+  /// @brief Registers all classes from the Disaster/Gameplay in AngelScript
+  /// @param engine AngelScript engine
   void RegisterGameplay(asIScriptEngine *engine) {
     RegisterChunk(engine);
     RegisterWorld(engine);

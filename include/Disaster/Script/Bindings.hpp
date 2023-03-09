@@ -3,6 +3,8 @@
 #include <Disaster/Script/ScriptEngine.hpp>
 
 namespace px::disaster::script {
+  /// @brief Registers all Disaster classes in AngelScript
+  /// @param engine script engine
   extern void ConfigureEngine(ScriptEngine &engine);
 }
 
