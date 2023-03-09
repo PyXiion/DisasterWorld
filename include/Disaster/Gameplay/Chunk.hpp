@@ -13,14 +13,14 @@
 #include <Disaster/System/Color.hpp>
 #include <Disaster/Utils/FastNoiseLite.h>
 #include <Disaster/Utils/MemoryStream.hpp>
-#include <Disaster/ITickable.hpp>
+#include <Disaster/Tickable.hpp>
 
 namespace px::disaster {
   typedef uint16_t TileID;
   const int kChunkSize = 256;
 
   namespace gameplay {
-    class Chunk : public ITickable, public utils::ISerializable {
+    class Chunk : public Tickable, public utils::ISerializable {
     public:
       Chunk(int x, int y, bool inQueue = false);
 

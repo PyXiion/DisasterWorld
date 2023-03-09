@@ -8,14 +8,14 @@
 #include <condition_variable>
 
 #include <SFML/Graphics.hpp>
-#include <Disaster/ITickable.hpp>
+#include <Disaster/Tickable.hpp>
 #include <Disaster/Gameplay/Chunk.hpp>
 #include <Disaster/Gameplay/BaseWorldGenerator.hpp>
 #include <Disaster/ThreadSafe/Queue.hpp>
 #include <Disaster/Utils/FastNoiseLite.h>
 
 namespace px::disaster::gameplay {
-  class World : public ITickable {
+  class World : public Tickable {
     friend class Game;
   private:
     std::mutex m_chunksMutex;

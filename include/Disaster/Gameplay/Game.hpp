@@ -2,7 +2,7 @@
 #define PX_DISASTER_GAME_HPP
 #include <unordered_map>
 
-#include <Disaster/ITickable.hpp>
+#include <Disaster/Tickable.hpp>
 #include <Disaster/Gameplay/World.hpp>
 #include <Disaster/Gameplay/Camera.hpp>
 #include <Disaster/Gameplay/GameSettings.hpp>
@@ -14,7 +14,7 @@ namespace px::disaster {
   class Program;
 
   namespace gameplay {
-    class Game : private ITickable {
+    class Game : private Tickable {
     public:
       Game(Program &program);
 
