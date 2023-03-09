@@ -7,7 +7,6 @@ namespace px::disaster {
   
   struct Color {
   public:
-    Color();
     Color(ColorComponent r = 255, ColorComponent g = 255, ColorComponent b = 255, ColorComponent a = 255);
 
     ColorComponent r;
