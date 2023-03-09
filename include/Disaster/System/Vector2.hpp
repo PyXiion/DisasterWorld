@@ -8,6 +8,8 @@ namespace px::disaster {
     Vector2();
     Vector2(T x, T y);
 
+    Vector2<T> operator-() const;
+
     Vector2<T> operator+(const Vector2<T> &r) const;
     Vector2<T> operator-(const Vector2<T> &r) const;
 
@@ -41,6 +43,11 @@ namespace px::disaster {
   Vector2<T>::Vector2() : x(0), y(0) {}
   template<class T>
   Vector2<T>::Vector2(T x, T y) : x(x), y(y) {}
+
+  template<class T>
+  Vector2<T> Vector2<T>::operator-() const {
+    return Vector2(-x, -y);
+  }
 
   template<class T>
   Vector2<T> Vector2<T>::operator+(const Vector2<T> &r) const {
