@@ -39,16 +39,43 @@ namespace px::disaster::script {
     AS_CHECK(engine->RegisterObjectProperty("Color", "ColorComponent a", asOFFSET(Color, a)));
   }
   template<class T>
-  void RegisterVector(std::string name, std::string tname, asIScriptEngine *engine) {
+  void RegisterVector(std::string name, std::string tname, asIScriptEngine *engine, asDWORD flags) {
+    int r;
+    AS_CHECK(engine->RegisterObjectType(name.c_str(), sizeof(Vector2<T>), asOBJ_VALUE | asOBJ_POD | flags | asGetTypeTraits<Vector2<T>>()));
+
+    AS_CHECK(engine->RegisterObjectBehaviour(name.c_str(), asBEHAVE_CONSTRUCT, "void f()", asFUNCTION(Constructor<Vector2<T>>), asCALL_CDECL_OBJFIRST));
+    AS_CHECK(engine->RegisterObjectBehaviour(name.c_str(), asBEHAVE_CONSTRUCT, 
+            ("void f(" + tname + " y, " + tname + " x)").c_str(), 
+            asFUNCTION(WHOLE(Constructor<Vector2<T>, T, T>)), asCALL_CDECL_OBJFIRST));
+    
+    AS_CHECK(engine->RegisterObjectMethod(name.c_str(), 
+            (tname + " get_length() const").c_str(),
+            asMETHOD(Vector2<T>, Length), asCALL_THISCALL));
+
+    AS_CHECK(engine->RegisterObjectMethod(name.c_str(), 
+            (name + " opNeg() const").c_str(), asMETHODPR(Vector2<T>, operator-, () const, Vector2<T>), asCALL_THISCALL));
+    
+    AS_CHECK(engine->RegisterObjectMethod(name.c_str(), 
+            (name + " opAdd(" + name + ") const").c_str(), asMETHOD(Vector2<T>, operator+), asCALL_THISCALL));
+    AS_CHECK(engine->RegisterObjectMethod(name.c_str(), 
+            (name + " opSub(" + name + ") const").c_str(), asMETHODPR(Vector2<T>, operator-, (const Vector2<T>&) const, Vector2<T>), asCALL_THISCALL));
+
+    AS_CHECK(engine->RegisterObjectMethod(name.c_str(), 
+            (name + " opMul(" + tname + ") const").c_str(), asMETHOD(Vector2<T>, operator*), asCALL_THISCALL));
+    AS_CHECK(engine->RegisterObjectMethod(name.c_str(), 
+            (name + " opDiv(" + tname + ") const").c_str(), asMETHOD(Vector2<T>, operator/), asCALL_THISCALL));
+    
+    AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " x").c_str(), asOFFSET(Vector2<T>, x)));
+    AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " y").c_str(), asOFFSET(Vector2<T>, y)));
   }
   template<class T>
-  void RegisterRect(std::string name, std::string vname, std::string tname, asIScriptEngine *engine) {
+  void RegisterRect(std::string name, std::string vname, std::string tname, asIScriptEngine *engine, asDWORD flags) {
     int r;
-    AS_CHECK(engine->RegisterObjectType(name.c_str(), sizeof(Rect<T>), asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<Rect<T>>()));
+    AS_CHECK(engine->RegisterObjectType(name.c_str(), sizeof(Rect<T>), asOBJ_VALUE | asOBJ_POD | flags | asGetTypeTraits<Rect<T>>()));
 
     AS_CHECK(engine->RegisterObjectBehaviour(name.c_str(), asBEHAVE_CONSTRUCT, "void f()", asFUNCTION(Constructor<Rect<T>>), asCALL_CDECL_OBJFIRST));
     AS_CHECK(engine->RegisterObjectBehaviour(name.c_str(), asBEHAVE_CONSTRUCT, 
-            ("void f(" + tname + "left, " + tname + "top, " + tname + "width, " + tname + "height)").c_str(), 
+            ("void f(" + tname + " left, " + tname + " top, " + tname + " width, " + tname + " height)").c_str(), 
             asFUNCTION(WHOLE(Constructor<Rect<T>, T, T, T, T>)), asCALL_CDECL_OBJFIRST));
     
     AS_CHECK(engine->RegisterObjectMethod(name.c_str(), 
@@ -69,14 +96,14 @@ namespace px::disaster::script {
   void RegisterSystem(asIScriptEngine *engine) {
     RegisterColor(engine);
 
-    RegisterVector<int>("Vector2i", "int", engine);
-    RegisterVector<uint>("Vector2u", "uint", engine);
-    RegisterVector<float>("Vector2f", "float", engine);
-    RegisterVector<double>("Vector2d", "double", engine);
+    RegisterVector<int>("Vector2i", "int", engine, asOBJ_APP_CLASS_ALLINTS);
+    RegisterVector<uint>("Vector2u", "uint", engine, asOBJ_APP_CLASS_ALLINTS);
+    RegisterVector<float>("Vector2f", "float", engine, asOBJ_APP_CLASS_ALLFLOATS);
+    RegisterVector<double>("Vector2d", "double", engine, asOBJ_APP_CLASS_ALLFLOATS);
 
-    RegisterRect<int>("IntRect", "Vector2i", "int", engine);
-    RegisterRect<uint>("UintRect", "Vector2u", "uint", engine);
-    RegisterRect<float>("FloatRect", "Vector2f", "float", engine);
+    RegisterRect<int>("IntRect", "Vector2i", "int", engine, asOBJ_APP_CLASS_ALLINTS);
+    RegisterRect<uint>("UintRect", "Vector2u", "uint", engine, asOBJ_APP_CLASS_ALLINTS);
+    RegisterRect<float>("FloatRect", "Vector2f", "float", engine, asOBJ_APP_CLASS_ALLFLOATS);
   }
 
   // Gameplay section
