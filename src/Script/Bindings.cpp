@@ -52,19 +52,19 @@ namespace px::disaster::script {
             asFUNCTION(WHOLE(Constructor<Rect<T>, T, T, T, T>)), asCALL_CDECL_OBJFIRST));
     
     AS_CHECK(engine->RegisterObjectMethod(name.c_str(), 
-            ("bool Contains(" + vname + " point) const"),
-            asMETHODPR(T, Contains, (Vector2<T>) const, bool), asCALL_THISCALL));
+            ("bool Contains(" + vname + " point) const").c_str(),
+            asMETHODPR(Rect<T>, Contains, (Vector2<T>) const, bool), asCALL_THISCALL));
     AS_CHECK(engine->RegisterObjectMethod(name.c_str(), 
-            ("bool Contains(" + tname + " x, " + tname + " y) const"),
-            asMETHODPR(T, Contains, (T, T) const, bool), asCALL_THISCALL));
+            ("bool Contains(" + tname + " x, " + tname + " y) const").c_str(),
+            asMETHODPR(Rect<T>, Contains, (T, T) const, bool), asCALL_THISCALL));
     AS_CHECK(engine->RegisterObjectMethod(name.c_str(), 
-            ("bool Intersects(" + name + " otherRect) const"),
-            asMETHOD(T, Intersects), asCALL_THISCALL));
+            ("bool Intersects(" + name + " otherRect) const").c_str(),
+            asMETHOD(Rect<T>, Intersects), asCALL_THISCALL));
     
-    AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " left").c_str(), asOFFSET(T, left)));
-    AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " top").c_str(), asOFFSET(T, top)));
-    AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " width").c_str(), asOFFSET(T, width)));
-    AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " height").c_str(), asOFFSET(T, height)));
+    AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " left").c_str(), asOFFSET(Rect<T>, left)));
+    AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " top").c_str(), asOFFSET(Rect<T>, top)));
+    AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " width").c_str(), asOFFSET(Rect<T>, width)));
+    AS_CHECK(engine->RegisterObjectProperty(name.c_str(), (tname + " height").c_str(), asOFFSET(Rect<T>, height)));
   }
   void RegisterSystem(asIScriptEngine *engine) {
     RegisterColor(engine);
