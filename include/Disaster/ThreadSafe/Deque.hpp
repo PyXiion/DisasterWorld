@@ -63,6 +63,15 @@ namespace px::disaster::thread_safe {
       return m_deque.empty();
     }
 
+    std::mutex &GetMutex() { return m_mutex; }
+
+    /// @warning Not thread-safe
+    std::deque<T>::iterator begin() { return m_deque.begin(); }
+
+    /// @warning Not thread-safe
+    std::deque<T>::iterator end()   { return m_deque.end();   }
+
+
   private:
     mutable std::mutex m_mutex;
     std::deque<T> m_deque;  
