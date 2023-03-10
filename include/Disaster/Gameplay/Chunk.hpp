@@ -22,51 +22,26 @@ namespace px::disaster {
   namespace gameplay {
     class Chunk : public Tickable, public utils::ISerializable {
     public:
-      Chunk(int x, int y, bool inQueue = false);
+      Chunk(Vector2i position);
 
-      int GetX();
-      int GetY();
+      Vector2i GetPosition() const;
+
+      void UpdateTileTextures(IntRect area = IntRect(0, 0, kChunkSize, kChunkSize));
+      void UpdateTileTexture(Vector2i position);
+
+      void SetTile(Vector2i position, TileID tileId);
+
+      TileID GetTile(Vector2i position) const;
+      TileID *GetTilePtr(Vector2i position);
+      const TileID *GetTilePtr(Vector2i position) const;
+
+      void SetTileColor(Vector2i position, Color color);
 
       void Clear(TileID tile = 0);
-      /// @brief Update tile textures
-      /// @param area updateable area (default: all chunk)
-      void UpdateUV(IntRect area = IntRect(0, 0, kChunkSize, kChunkSize));
-
-      /// @brief Update tile texture
-      /// @param x X coordinate inside the chunk (from 0 to kChunkSize)
-      /// @param y 
-      void UpdateUV(int x, int y);
-
-      /// @brief Set tile
-      /// @param x X coordinate inside the chunk (from 0 to kChunkSize)
-      /// @param y
-      /// @param tileId
-      void SetTile(int x, int y, TileID tileId);
-
-      /// @brief Get tile
-      /// @param x X coordinate inside the chunk (from 0 to kChunkSize)
-      /// @param y 
-      /// @return tile ID
-      TileID GetTile(int x, int y) const;
-
-      /// @brief Get pointer to tile ID
-      /// @param x X coordinate inside the chunk (from 0 to kChunkSize)
-      /// @param y 
-      /// @return pointer to tile ID
-      TileID *GetTileRef(int x, int y);
-
-      /// @brief Get pointer to tile ID
-      /// @param x X coordinate inside the chunk (from 0 to kChunkSize)
-      /// @param y 
-      /// @return pointer to tile ID
-      const TileID *GetTileRef(int x, int y) const;
-
-      void SetColor(int x, int y, Color color);
-
-      bool IsInQueue() const;
-      void SetQueueStatus(bool status);
 
       void Draw() const;
+
+      static void GenerateGridVertices();
 
       void Serialize(utils::MemoryStream &stream) const override;
       void Deserialize(utils::MemoryStream &stream) override;
@@ -76,11 +51,7 @@ namespace px::disaster {
       std::array<Vector2f, kChunkSize * kChunkSize * 4> m_textureCoords;
       Transform m_transform;
 
-      int m_x;
-      int m_y;
-
-      bool m_wasEdited;
-      std::unique_ptr<std::atomic_bool> m_inQueue;
+      Vector2i m_position;
 
       const graphics::Texture *m_texture;
 

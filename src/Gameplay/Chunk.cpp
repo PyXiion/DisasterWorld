@@ -10,40 +10,18 @@ namespace px::disaster::gameplay {
   std::array<Vector2f, kChunkSize * kChunkSize * 4> Chunk::gridVertices;
   graphics::VertexArray Chunk::gridVA;
 
-  Chunk::Chunk(int x, int y, bool inQueue) 
-    : m_x(x), 
-      m_y(y), 
-      // m_vertices(sf::Quads, kChunkSize * kChunkSize * 4), 
-      m_wasEdited(false), 
-      m_inQueue(std::make_unique<std::atomic_bool>(inQueue)) {
-    m_transform.Move(m_x * kChunkSize, m_y * kChunkSize);
+  Chunk::Chunk(Vector2i position) 
+    : m_position(position) {
+    m_transform.Move((position * kChunkSize).Convert<float>());
     m_texture = &Program::GetInstance().GetGame().GetTilemap().GetTilemapTexture();
-
-    static auto _executeOnce = [] -> char {
-      EASY_BLOCK("Generating chunk vertices");
-      for (int i = 0; i < kChunkSize; ++i) {
-        for (int j = 0; j < kChunkSize; ++j) {
-          // Define position of the tile
-          int index = (i + j * kChunkSize) * 4;
-          gridVertices[index] = Vector2f(i, j);
-          gridVertices[index + 1] = Vector2f(i + 1, j);
-          gridVertices[index + 2] = Vector2f(i + 1, j + 1);
-          gridVertices[index + 3] = Vector2f(i, j + 1);
-        }
-      }
-      return 0;
-    }();
   }
 
-  int Chunk::GetX() {
-    return m_x;
-  }
-  int Chunk::GetY() {
-    return m_y;
+  Vector2i Chunk::GetPosition() const {
+    return m_position;
   }
 
   void Chunk::Clear(TileID tile) {
-    EASY_FUNCTION();
+    EASY_BLOCK("Chunk::Clear");
     for (int i = 0; i < kChunkSize; i++) {
       for (int j = 0; j < kChunkSize; j++) {
         m_tiles[i][j] = tile;
@@ -51,17 +29,19 @@ namespace px::disaster::gameplay {
     }
   }
   
-  void Chunk::UpdateUV(IntRect area) {
-    EASY_FUNCTION();
+  void Chunk::UpdateTileTextures(IntRect area) {
+    EASY_BLOCK("Chunk::UpdateTileTextures");
     for (int i = area.left; i < area.left + area.width; i++)
       for (int j = area.top; j < area.top + area.height; j++) {
-        UpdateUV(i, j);
+        UpdateTileTexture({i, j});
       }
   }
-  void Chunk::UpdateUV(int x, int y) {
-    int index = (x + y * kChunkSize) * 4;
-
-    IntRect rect = Program::GetInstance().GetGame().GetTilemap().GetTileTextureRect(m_tiles[x][y]);
+  void Chunk::UpdateTileTexture(Vector2i position) {
+    EASY_BLOCK("Chunk::UpdateTileTexture");
+    int index = (position.x + position.y * kChunkSize) * 4;
+    
+    TileID id = GetTile(position);
+    IntRect rect = Program::GetInstance().GetGame().GetTilemap().GetTileTextureRect(id);
 
     m_textureCoords[index] =     Vector2f(rect.left, rect.top);
     m_textureCoords[index + 1] = Vector2f(rect.left + rect.width, rect.top);
@@ -69,76 +49,49 @@ namespace px::disaster::gameplay {
     m_textureCoords[index + 3] = Vector2f(rect.left, rect.top + rect.height);
   }
 
-  void Chunk::SetTile(int x, int y, TileID tileId) {
-    m_tiles[x][y] = tileId;
-
-    m_wasEdited = true; // indicates that the chunk must be saved when unloaded
+  void Chunk::SetTile(Vector2i position, TileID tileId) {
+    m_tiles[position.x][position.y] = tileId;
   }
-  TileID Chunk::GetTile(int x, int y) const {
-    return m_tiles[x][y];
+  TileID Chunk::GetTile(Vector2i position) const {
+    return m_tiles[position.x][position.y];
   }
   
-  TileID *Chunk::GetTileRef(int x, int y) {
-    return &m_tiles[x][y];
+  TileID *Chunk::GetTilePtr(Vector2i position) {
+    return &m_tiles[position.x][position.y];
   }
-  const TileID *Chunk::GetTileRef(int x, int y) const {
-    return &m_tiles[x][y];
-  }
-
-  void Chunk::SetColor(int x, int y, Color color) {
-    int index = (x + y * kChunkSize) * 4;
-
-    // m_vertices[index].color = color;
-    // m_vertices[index + 1].color = color;
-    // m_vertices[index + 2].color = color;
-    // m_vertices[index + 3].color = color;
+  const TileID *Chunk::GetTilePtr(Vector2i position) const {
+    return &m_tiles[position.x][position.y];
   }
 
-  bool Chunk::IsInQueue() const {
-    return *m_inQueue;
-  }
-  void Chunk::SetQueueStatus(bool status) {
-    EASY_FUNCTION();
-    *m_inQueue = status;
+  void Chunk::SetTileColor(Vector2i position, Color color) {
+    // TODO: realise later
   }
 
   void Chunk::Draw() const {
     EASY_BLOCK("Chunk::Draw");
+    // TODO: realise later
+  }
 
+  void Chunk::GenerateGridVertices() {
+    EASY_BLOCK("Chunk::GenerateGridVertices");
+    for (int i = 0; i < kChunkSize; ++i) {
+      for (int j = 0; j < kChunkSize; ++j) {
+        int index = (i + j * kChunkSize) * 4;
+
+        gridVertices[index] = Vector2f(i, j);
+        gridVertices[index + 1] = Vector2f(i + 1, j);
+        gridVertices[index + 2] = Vector2f(i + 1, j + 1);
+        gridVertices[index + 3] = Vector2f(i, j + 1);
+      }
+    }
   }
 
   void Chunk::Serialize(utils::MemoryStream &stream) const {
-    EASY_FUNCTION();
-    std::vector<std::string> globalIds;
-
-    // Get unique IDs
-    std::vector<TileID> uniqueIds;
-    for (int x = 0; x < kChunkSize; x++)
-      for (int y = 0; y < kChunkSize; y++)
-        if (std::find(uniqueIds.begin(), uniqueIds.end(), m_tiles[x][y]) != uniqueIds.end())
-          uniqueIds.push_back(m_tiles[x][y]);
-    
-    // Map
-    Tilemap &tilemap = Program::GetInstance().GetGame().GetTilemap();
-    for (int i = 0; i < uniqueIds.size(); i++) {
-      TileInfo info = tilemap.GetTileInfo(uniqueIds[i]);
-      globalIds.push_back(info.id);
-    }
-
-    stream << globalIds;
-
-    for (int x = 0; x < kChunkSize; x++)
-      for (int y = 0; y < kChunkSize; y++) {
-        int id = std::find(uniqueIds.begin(), uniqueIds.end(), m_tiles[x][y]) - uniqueIds.begin();
-        stream << id;
-      }
+    EASY_BLOCK("Chunk::Serialize");
+    // TODO: realise later
   }
-
   void Chunk::Deserialize(utils::MemoryStream &stream) {
-    EASY_FUNCTION();
-    for (int x = 0; x < kChunkSize; x++)
-      for (int y = 0; y < kChunkSize; y++) {
-        stream >> m_tiles[x][y];
-      }
+    EASY_BLOCK("Chunk::Deserialize");
+    // TODO: realise later
   }
 }

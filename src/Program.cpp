@@ -1,6 +1,7 @@
 #include <Disaster/Program.hpp>
 #include <thread>
 
+#include <Disaster/Gameplay/Chunk.hpp>
 #include <Disaster/Script/Bindings.hpp>
 #include <Disaster/Utils/ResourceManager.hpp>
 #include <imgui/imgui.h>
@@ -35,6 +36,8 @@ namespace px::disaster {
     glViewport(0, 0, m_window.GetWidth(), m_window.GetHeight());
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    gameplay::Chunk::GenerateGridVertices();
 
     ResourceManager::AddFolder("./data");
     ResourceManager::AddFolder("./mods");
