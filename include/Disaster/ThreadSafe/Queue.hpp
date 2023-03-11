@@ -18,10 +18,19 @@ namespace px::disaster::thread_safe {
       std::lock_guard<std::mutex> lk(other.m_mutex);
       m_queue = other.m_queue;
     }
+    Queue(Queue &&other) {
+      std::lock_guard<std::mutex> lk(other.m_mutex);
+      m_queue = std::move(other.m_queue);
+    }
 
-    void Push(T value) {
+    void Push(const T &value) {
       std::lock_guard<std::mutex> lk(m_mutex);
       m_queue.push(value);
+      m_dataCond.notify_one();
+    }
+    void Push(T &&value) {
+      std::lock_guard<std::mutex> lk(m_mutex);
+      m_queue.push(std::move(value));
       m_dataCond.notify_one();
     }
 

@@ -551,7 +551,7 @@ namespace px::disaster {
       size_t chunksCount;
       {
         std::lock_guard<std::mutex> lk(world.GetChunksMutex());
-        chunksCount = world.GetChunks().size();
+        chunksCount = world.GetChunksUnsafe().size();
       }
       chunksUsage = chunksCount * sizeof(gameplay::Chunk);
     }

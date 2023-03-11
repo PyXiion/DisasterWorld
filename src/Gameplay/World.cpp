@@ -5,14 +5,13 @@
 #include <easy/profiler.h>
 
 namespace px::disaster::gameplay {
-  World::World() : m_chunkLoadThread(&World::ChunkLoadThread, this), m_stopChunkLoadThread(false) {
+  World::World() : m_chunkProcessingThread(&World::ChunkLoadThread, this), m_terminateThreads(false) {
     m_worldGenerator = new BaseWorldGenerator();
-    m_chunks.reserve(100); // magic number
   }
   World::~World() {
-    if (m_chunkLoadThread.joinable()) {
-      m_stopChunkLoadThread = true;
-      m_chunkLoadThread.join();
+    if (m_chunkProcessingThread.joinable()) {
+      m_terminateThreads = true;
+      m_chunkProcessingThread.join();
     }
   }
 
@@ -23,70 +22,79 @@ namespace px::disaster::gameplay {
   void World::ChunkLoadThread() {
     EASY_THREAD_SCOPE("Chunk loader");
     while (true) {
-      if (m_stopChunkLoadThread)
+      if (m_terminateThreads)
         break;
-    
-      Chunk *chunk;
-      m_chunksQueue.WaitAndPop(chunk);
+      
+      ChunkPtr chunk;
+      m_chunkRequests.WaitAndPop(chunk);
+      EASY_BLOCK("Generating chunk");
 
-      EASY_BLOCK("Generating/loading chunk", profiler::colors::Orange500);
-      // chunk->GenerateVertices();
+      if (chunk.unique()) continue;
       m_worldGenerator->GenerateChunk(*chunk);
-      chunk->UpdateUV();
-      chunk->SetQueueStatus(false);
+      
+      std::lock_guard<std::mutex> lk(m_chunksMutex);
+      chunk->SetLoadedStatus(true);
     }
   }
 
-  Chunk *World::GetChunkUnsafe(float x, float y) {
-    EASY_FUNCTION();
-    int ix = static_cast<int>(std::floor(x / kChunkSize));
-    int iy = static_cast<int>(std::floor(y / kChunkSize));
-    for (auto& chunk : m_chunks) {
-      if (chunk->GetX() == ix && chunk->GetY() == iy) {
-        return chunk.get();
-      }
-    }
+  ChunkPtr World::GetChunkUnsafe(Vector2i position) {
+    auto begin = m_chunks.begin();
+    auto end = m_chunks.end();
+    auto chunk = std::find_if(begin, end, [&](auto &elem) {return elem->GetPosition() == position;});
+    if (chunk != end)
+      return *chunk;
     return nullptr;
   }
-  // Thread-safe
-  Chunk *World::GetChunk(float x, float y) {
-    EASY_FUNCTION();
+  ChunkPtr World::GetChunk(Vector2i position) {
     std::lock_guard<std::mutex> lock(m_chunksMutex);
-    return GetChunkUnsafe(x, y);
+    return GetChunkUnsafe(position);
   }
 
-  bool World::RequestChunkUnsafe(int x, int y) {
+  bool World::RequestChunk(Vector2i position) {
     EASY_BLOCK("World::RequestChunk");
-    for (auto& chunk : m_chunks) {
-      if (chunk->GetX() == x && chunk->GetY() == y) {
-        return false;
-      }
-    }
-    PX_LOG("Chunk %d %d requested", x, y);
-    // PX_LOG("Requested chunk %d %d", x, y);
-    m_chunks.push_back(std::make_unique<Chunk>(x, y, true));
-    m_chunksQueue.Push(m_chunks.back().get());
+    if (IsChunkLoadedOrQueued(position)) return false;
+    auto chunk = std::make_shared<Chunk>(position);
+
+    m_chunkRequests.Push(chunk);
+    AppendChunk(chunk);
     return true;
   }
 
-  bool World::RequestChunk(int x, int y) {
-    std::lock_guard<std::mutex> lk_a(m_chunksMutex);
-    return RequestChunkUnsafe(x, y);
+  bool World::IsChunkLoadedOrQueued(Vector2i position) {
+    std::lock_guard<std::mutex> lk(m_chunksMutex);
+    auto begin = m_chunks.begin();
+    auto end = m_chunks.end();
+    return std::find_if(begin, end, [&](auto &elem) {return elem->GetPosition() == position;}) != end;
+  }
+  bool World::IsChunkQueued(Vector2i position) {
+    std::lock_guard<std::mutex> lk(m_chunksMutex);
+    auto begin = m_chunks.begin();
+    auto end = m_chunks.end();
+    return std::find_if(begin, end, [&](auto &elem) {return elem->GetPosition() == position && !elem->IsLoaded();}) != end;
+  }
+  bool World::IsChunkLoaded(Vector2i position) {
+    std::lock_guard<std::mutex> lk(m_chunksMutex);
+    auto begin = m_chunks.begin();
+    auto end = m_chunks.end();
+    return std::find_if(begin, end, [&](auto &elem) {return elem->GetPosition() == position && elem->IsLoaded();}) != end;
   }
 
-  std::vector<std::unique_ptr<Chunk>> &World::GetChunks() {
+  std::vector<ChunkPtr> &World::GetChunksUnsafe() {
     return m_chunks;
   }
   std::mutex &World::GetChunksMutex() {
     return m_chunksMutex;
   }
 
+  void World::AppendChunk(ChunkPtr chunk) {
+    std::lock_guard<std::mutex> lk(m_chunksMutex);
+    m_chunks.push_back(chunk);
+  }
 
   void World::Draw() const {
     EASY_BLOCK("World::Draw");
     for (const auto &chunk : m_chunks) {
-      if (chunk->IsInQueue()) continue;
-      chunk->Draw();
+      if (chunk->IsLoaded()) chunk->Draw();
     }
   }
 }

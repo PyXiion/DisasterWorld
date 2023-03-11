@@ -37,6 +37,9 @@ namespace px::disaster {
 
       void SetTileColor(Vector2i position, Color color);
 
+      void SetLoadedStatus(bool loaded);
+      bool IsLoaded() const;
+
       void Clear(TileID tile = 0);
 
       void Draw() const;
@@ -50,8 +53,9 @@ namespace px::disaster {
       TileID m_tiles[kChunkSize][kChunkSize];
       std::array<Vector2f, kChunkSize * kChunkSize * 4> m_textureCoords;
       Transform m_transform;
-
       Vector2i m_position;
+
+      std::unique_ptr<std::atomic_bool> m_loaded;
 
       const graphics::Texture *m_texture;
 

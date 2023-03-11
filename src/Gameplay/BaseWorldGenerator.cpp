@@ -12,10 +12,12 @@ namespace px::disaster::gameplay {
     EASY_BLOCK("BaseWorldGenerator::GenerateChunk");
     for (int x = 0; x < kChunkSize; x++) {
       for (int y = 0; y < kChunkSize; y++) {
-        float height = m_noisePerlin.GetNoise<float>(chunk.GetX() * kChunkSize + x, chunk.GetY() * kChunkSize + y);
+        Vector2i position(x, y);
+        Vector2i worldPos = chunk.GetPosition() * kChunkSize + position;
+        float height = m_noisePerlin.GetNoise<float>(worldPos.x, worldPos.y);
 
-        if (height >= 0) chunk.SetTile(x, y, 0);
-        else chunk.SetTile(x, y, 1);
+        if (height >= 0) chunk.SetTile(position, 0);
+        else chunk.SetTile(position, 1);
       }
     }
   }

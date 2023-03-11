@@ -11,7 +11,7 @@ namespace px::disaster::gameplay {
   graphics::VertexArray Chunk::gridVA;
 
   Chunk::Chunk(Vector2i position) 
-    : m_position(position) {
+    : m_position(position), m_loaded(std::make_unique<std::atomic_bool>(false)) {
     m_transform.Move((position * kChunkSize).Convert<float>());
     m_texture = &Program::GetInstance().GetGame().GetTilemap().GetTilemapTexture();
   }
@@ -65,6 +65,13 @@ namespace px::disaster::gameplay {
 
   void Chunk::SetTileColor(Vector2i position, Color color) {
     // TODO: realise later
+  }
+
+  void Chunk::SetLoadedStatus(bool loaded) {
+    *m_loaded = loaded;
+  }
+  bool Chunk::IsLoaded() const {
+    return *m_loaded;
   }
 
   void Chunk::Draw() const {

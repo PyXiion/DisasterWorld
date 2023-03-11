@@ -197,7 +197,7 @@ namespace px::disaster::gameplay {
   void Game::ProcessChunksVisibility() {
     EASY_BLOCK("Game::ProcessChunksVisibility");
     std::unique_lock<std::mutex> lk(m_world->GetChunksMutex());
-    auto &chunks = m_world->GetChunks();
+    auto &chunks = m_world->GetChunksUnsafe();
     Vector2f camPos = m_camera->GetPosition() / static_cast<float>(kChunkSize);
     Vector2f camSize = m_camera->GetSize() / 2.0f / static_cast<float>(kChunkSize);
     camPos.x = std::floor(camPos.x);
@@ -210,14 +210,12 @@ namespace px::disaster::gameplay {
     // Only one chunk per frame
     EASY_BLOCK("Unload chunks");
     for (auto it = chunks.begin(); it != chunks.end(); ) {
-      int chunkX = (*it)->GetX();
-      int chunkY = (*it)->GetY();
-      if (!(*it)->IsInQueue() && 
-       (static_cast<int>(std::floor(std::abs(camPos.x - chunkX))) > camSize.x ||
-        static_cast<int>(std::floor(std::abs(camPos.y - chunkY))) > camSize.y)) {
+      Vector2i chunkPos = (*it)->GetPosition();
+      if (static_cast<int>(std::floor(std::abs(camPos.x - chunkPos.x))) > camSize.x ||
+          static_cast<int>(std::floor(std::abs(camPos.y - chunkPos.y))) > camSize.y) {
         // it->Unload();
         it = chunks.erase(it);
-        PX_LOG("Chunk %d %d deleted", chunkX, chunkY);
+        PX_LOG("Chunk %d %d deleted", chunkPos.x, chunkPos.y);
         break;
       } 
       else {
@@ -232,9 +230,8 @@ namespace px::disaster::gameplay {
     EASY_BLOCK("Load chunks");
     bool requested = false;
     for (int x = std::floor(camPos.x - camSize.x); x <= std::ceil(camPos.x + camSize.x); x++) {
-      std::lock_guard<std::mutex> lk_b(m_world->m_chunksMutex);
       for (int y = std::floor(camPos.y - camSize.y); y <= std::ceil(camPos.y + camSize.y); y++) {
-        if (m_world->RequestChunkUnsafe(x, y)) {
+        if (m_world->RequestChunk({x, y})) {
           requested = true;
           break;
         }

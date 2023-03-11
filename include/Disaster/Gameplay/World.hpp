@@ -5,72 +5,57 @@
 #include <thread>
 #include <memory>
 #include <mutex>
+#include <list>
+#include <set>
+#include <optional>
 #include <condition_variable>
 
 #include <SFML/Graphics.hpp>
 #include <Disaster/Tickable.hpp>
 #include <Disaster/Gameplay/Chunk.hpp>
 #include <Disaster/Gameplay/BaseWorldGenerator.hpp>
+#include <Disaster/System/Vector2.hpp>
 #include <Disaster/ThreadSafe/Queue.hpp>
 #include <Disaster/Utils/FastNoiseLite.h>
 
 namespace px::disaster::gameplay {
+  typedef std::shared_ptr<Chunk> ChunkPtr;
   class World : public Tickable {
     friend class Game;
-  private:
-    std::mutex m_chunksMutex;
-    std::vector<std::unique_ptr<Chunk>> m_chunks;
-
-    thread_safe::Queue<Chunk *> m_chunksQueue;
-    
-    std::thread m_chunkLoadThread;
-    std::atomic_bool m_stopChunkLoadThread;
-
-    IWorldGenerator *m_worldGenerator;
-
-
-    void ChunkLoadThread();
-
   public:
     World();
     ~World();
 
     virtual void TickMedium(float tickDelta) override;
 
-    /// @brief Get a chunk by coordinates, creates new if it does not exist
-    /// @param x X world coordinate
-    /// @param y Y world coordinate
-    /// @return Pointer to a chunk
-    Chunk *GetChunkUnsafe(float x, float y);
+    ChunkPtr GetChunkUnsafe(Vector2i position);
+    ChunkPtr GetChunk(Vector2i position);
 
-    /// @brief Get a chunk by coordinates, creates new if it does not exist
-    /// @param x X world coordinate
-    /// @param y Y world coordinate
-    /// @return Pointer to a chunk
-    Chunk *GetChunk(float x, float y);
+    bool RequestChunk(Vector2i position);
 
-    /// @brief Request to load XY chunk
-    /// @param x chunk X
-    /// @param y chunk Y
-    /// @return false if already loaded
-    bool RequestChunkUnsafe(int x, int y);
+    bool IsChunkLoadedOrQueued(Vector2i position);
+    bool IsChunkQueued(Vector2i position);
+    bool IsChunkLoaded(Vector2i position);
 
-    /// @brief Request to load XY chunk
-    /// @param x chunk X
-    /// @param y chunk Y
-    /// @return false if already loaded
-    bool RequestChunk(int x, int y);
-
-    /// @brief Get loaded chunks (not thread-safe)
-    /// @return loaded chunks
-    /// @see GetChunksMutex
-    std::vector<std::unique_ptr<Chunk>> &GetChunks();
-    
-    /// @brief Get mutex for vector of loaded chunks
-    /// @return mutex
+    std::vector<ChunkPtr> &GetChunksUnsafe();
     std::mutex &GetChunksMutex();
 
     void Draw() const;
+
+  private:
+    std::vector<ChunkPtr> m_chunks;
+    std::mutex m_chunksMutex;
+
+    thread_safe::Queue<ChunkPtr> m_chunkRequests;
+    
+    std::thread m_chunkProcessingThread;
+    std::atomic_bool m_terminateThreads;
+
+    IWorldGenerator *m_worldGenerator;
+
+    void AppendChunk(ChunkPtr chunk);
+
+    void ChunkLoadThread();
   };
 }
 
