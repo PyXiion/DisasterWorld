@@ -24,7 +24,7 @@ namespace px::disaster {
 
     Vector2<T> &operator=(const Vector2<T> &other);
 
-    bool operator==(const Vector2<T> &other);
+    bool operator==(const Vector2<T> &other) const;
 
     template<class U>
     Vector2<U> Convert() const;
@@ -103,7 +103,7 @@ namespace px::disaster {
   }
 
   template<class T>
-  bool Vector2<T>::operator==(const Vector2<T> &other) {
+  bool Vector2<T>::operator==(const Vector2<T> &other) const {
     return x == other.x && y == other.y;
   }
 
