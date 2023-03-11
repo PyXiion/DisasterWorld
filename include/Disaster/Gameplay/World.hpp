@@ -32,10 +32,12 @@ namespace px::disaster::gameplay {
     ChunkPtr GetChunk(Vector2i position);
 
     bool RequestChunk(Vector2i position);
+    bool DeleteChunk(Vector2i position);
 
     bool IsChunkLoadedOrQueued(Vector2i position);
     bool IsChunkQueued(Vector2i position);
     bool IsChunkLoaded(Vector2i position);
+
 
     std::vector<ChunkPtr> &GetChunksUnsafe();
     std::mutex &GetChunksMutex();

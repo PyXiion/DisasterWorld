@@ -59,6 +59,17 @@ namespace px::disaster::gameplay {
     AppendChunk(chunk);
     return true;
   }
+  bool World::DeleteChunk(Vector2i position) {
+    EASY_BLOCK("World::DeleteChunk");
+    std::lock_guard<std::mutex> lk(m_chunksMutex);
+    auto begin = m_chunks.begin();
+    auto end = m_chunks.end();
+    auto it = std::find_if(begin, end, [&](auto &elem) {return elem->GetPosition() == position;});
+    if (it == end)
+      return false;
+    m_chunks.erase(it);
+    return true;
+  }
 
   bool World::IsChunkLoadedOrQueued(Vector2i position) {
     std::lock_guard<std::mutex> lk(m_chunksMutex);
