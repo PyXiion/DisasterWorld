@@ -6,6 +6,10 @@
 #include <Disaster/Gameplay/Chunk.hpp>
 #include <Disaster/Gameplay/World.hpp>
 #include <Disaster/Gameplay/Game.hpp> 
+#include <Disaster/Graphics/Sprite.hpp>
+#include <Disaster/Graphics/Texture.hpp>
+#include <Disaster/Script/SharedPointer.hpp>
+#include <Disaster/Utils/ResourceManager.hpp>
 #include <angelscript.h>
 
 #define AS_CHECK(...) r = __VA_ARGS__; assert(r >= 0)
@@ -140,6 +144,15 @@ namespace px::disaster::script {
     RegisterRect<float>("FloatRect", "Vector2f", "float", engine, asOBJ_APP_CLASS_ALLFLOATS);
   }
 
+  // Graphics section
+  void RegisterSprite(asIScriptEngine *engine) {
+
+  }
+
+  void RegisterGraphics(asIScriptEngine *engine) {
+
+  }
+
   // Gameplay section
   /// @brief Register the Chunk class as CChunk (the prefix means the class can only be created from C++ code, 
   /// i.e. no constructors or AngelScript doesn't handle this object)
@@ -152,8 +165,9 @@ namespace px::disaster::script {
     AS_CHECK(engine->RegisterObjectMethod("CChunk", "TileID GetTile(int x, int y) const", asMETHOD(Chunk, GetTile), asCALL_THISCALL));
     AS_CHECK(engine->RegisterObjectMethod("CChunk", "void SetTile(int x, int y, TileID id)", asMETHOD(Chunk, SetTile), asCALL_THISCALL));
 
-    AS_CHECK(engine->RegisterObjectMethod("CChunk", "int get_x() const", asMETHOD(Chunk, GetX), asCALL_THISCALL));
-    AS_CHECK(engine->RegisterObjectMethod("CChunk", "int get_y() const", asMETHOD(Chunk, GetY), asCALL_THISCALL));
+    AS_CHECK(engine->RegisterObjectMethod("CChunk", "Vector2i get_position() const", asMETHOD(Chunk, GetPosition), asCALL_THISCALL));
+
+    RegisterSharedPointer<Chunk>("ChunkPtr", "CChunk", engine);
   }
   
   /// @brief Registers the World class as CWorld (the prefix means the class can only be created from C++ code, 
@@ -163,8 +177,8 @@ namespace px::disaster::script {
     int r;
     AS_CHECK(engine->RegisterObjectType("CWorld", 0, asOBJ_REF | asOBJ_NOHANDLE));
 
-    AS_CHECK(engine->RegisterObjectMethod("CWorld", "CChunk @GetChunk(float x, float y)", asMETHOD(World, GetChunk), asCALL_THISCALL));
-    AS_CHECK(engine->RegisterObjectMethod("CWorld", "bool RequestChunk(int x, int y)", asMETHOD(World, RequestChunk), asCALL_THISCALL));
+    AS_CHECK(engine->RegisterObjectMethod("CWorld", "ChunkPtr GetChunk(Vector2i position)", asMETHOD(World, GetChunk), asCALL_THISCALL));
+    AS_CHECK(engine->RegisterObjectMethod("CWorld", "bool RequestChunk(Vector2i position)", asMETHOD(World, RequestChunk), asCALL_THISCALL));
   }
   
   /// @brief Registers the Game class as CGame (the prefix means the class can only be created from C++ code, 
@@ -183,6 +197,17 @@ namespace px::disaster::script {
     RegisterChunk(engine);
     RegisterWorld(engine);
     RegisterGame(engine);
+  }
+
+  // Utils section
+  void RegisterResourceManager(asIScriptEngine *engine) {
+    // int r;
+    // AS_CHECK(engine->RegisterObjectType("CResourceManager", 0, asOBJ_REF | asOBJ_NOHANDLE));
+
+    // AS_CHECK(engine->RegisterObjectMethod("CResourceManager", "Texture &"))
+  }
+  void RegisterUtils(asIScriptEngine *engine) {
+
   }
 
   void ConfigureEngine(ScriptEngine &scriptEngine) {
