@@ -219,7 +219,7 @@ namespace px::disaster::gameplay {
   }
   void Game::DeleteChunksOutOfSight() {
     EASY_BLOCK("Game::DeleteChunksOutOfSight");
-    m_world->DeleteChunksIf([this](ChunkPtr &chunk) { return !m_camera->IsInView(chunk->GetBounds().Convert<float>()); });
+    m_world->DeleteChunksIf([this](ChunkPtr &chunk) { return chunk.unique() && !m_camera->IsInView(chunk->GetBounds().Convert<float>()); });
   }
 
   void Game::ProcessTicks() {
