@@ -548,12 +548,8 @@ namespace px::disaster {
     // Calc chunks usage
     {
       gameplay::World &world = Program::GetInstance().GetGame().GetWorld();
-      size_t chunksCount;
-      {
-        std::lock_guard<std::mutex> lk(world.GetChunksMutex());
-        chunksCount = world.GetChunksUnsafe().size();
-      }
-      chunksUsage = chunksCount * sizeof(gameplay::Chunk);
+      size_t chunkCount = world.GetChunkCount();
+      chunksUsage = chunkCount * sizeof(gameplay::Chunk);
     }
     // Calc console usage
     {

@@ -57,10 +57,10 @@ namespace px::disaster {
       float m_mouseScroll;
       std::unordered_map<int, bool> m_keyboard; // pressed keys (true = pressed, false = released)
 
-      /// @brief Sends a request to load/generate chunks to m_world, which go into the camera view. Deletes chunks out of view.
       void ProcessChunksVisibility();
+      void LoadChunksInSight();
+      void DeleteChunksOutOfSight();
 
-      /// @brief Calls TickHight, TickMedium, TickSlow, TickVerySlow periodically
       void ProcessTicks();
       
       void TickHigh(float deltaTick) override;     // 20 ticks per second

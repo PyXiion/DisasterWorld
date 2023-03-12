@@ -25,15 +25,15 @@ namespace px::disaster::gameplay {
       if (m_terminateThreads)
         break;
       
-      ChunkPtr chunk;
-      m_chunkRequests.WaitAndPop(chunk);
+      WeakChunkPtr ptr;
+      m_chunkRequests.WaitAndPop(ptr);
       EASY_BLOCK("Generating chunk");
 
-      if (chunk.unique()) continue;
-      m_worldGenerator->GenerateChunk(*chunk);
-      
-      std::lock_guard<std::mutex> lk(m_chunksMutex);
-      chunk->SetLoadedStatus(true);
+      if (ChunkPtr chunk = ptr.lock()) {
+        if (chunk->IsLoaded()) continue;
+        m_worldGenerator->GenerateChunk(*chunk);
+        chunk->SetLoadedStatus(true);
+      }
     }
   }
 
@@ -53,10 +53,10 @@ namespace px::disaster::gameplay {
   bool World::RequestChunk(Vector2i position) {
     EASY_BLOCK("World::RequestChunk");
     if (IsChunkLoadedOrQueued(position)) return false;
-    auto chunk = std::make_shared<Chunk>(position);
 
+    ChunkPtr chunk = std::make_shared<Chunk>(position);
     m_chunkRequests.Push(chunk);
-    AppendChunk(chunk);
+    AppendChunk(std::move(chunk));
     return true;
   }
   bool World::DeleteChunk(Vector2i position) {
@@ -90,16 +90,14 @@ namespace px::disaster::gameplay {
     return std::find_if(begin, end, [&](auto &elem) {return elem->GetPosition() == position && elem->IsLoaded();}) != end;
   }
 
-  std::vector<ChunkPtr> &World::GetChunksUnsafe() {
-    return m_chunks;
-  }
-  std::mutex &World::GetChunksMutex() {
-    return m_chunksMutex;
+  size_t World::GetChunkCount() {
+    std::lock_guard<std::mutex> lk(m_chunksMutex);
+    return m_chunks.size();
   }
 
-  void World::AppendChunk(ChunkPtr chunk) {
+  void World::AppendChunk(ChunkPtr &&chunk) {
     std::lock_guard<std::mutex> lk(m_chunksMutex);
-    m_chunks.push_back(chunk);
+    m_chunks.push_back(std::move(chunk));
   }
 
   void World::Draw() const {

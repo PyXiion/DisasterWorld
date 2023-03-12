@@ -48,4 +48,17 @@ namespace px::disaster::gameplay {
     shader.SetUniform("projection", m_projection);
     shader.SetUniform("view", m_view);
   }
+  
+  FloatRect Camera::GetViewBounds() const {
+    Vector2f leftTop = m_position - m_size / 2.0f;
+    return FloatRect(leftTop, m_size);
+  }
+  bool Camera::IsInView(Vector2f point) const {
+    FloatRect viewBounds = GetViewBounds();
+    return viewBounds.Contains(point);
+  }
+  bool Camera::IsInView(FloatRect rect) const {
+    FloatRect viewBounds = GetViewBounds();
+    return viewBounds.Intersects(rect);
+  }
 }

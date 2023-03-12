@@ -40,6 +40,8 @@ namespace px::disaster {
       void SetLoadedStatus(bool loaded);
       bool IsLoaded() const;
 
+      IntRect GetBounds() const;
+
       void Clear(TileID tile = 0);
 
       void Draw() const;

@@ -63,14 +63,27 @@ namespace px::disaster::thread_safe {
       return m_deque.empty();
     }
 
-    std::mutex &GetMutex() { return m_mutex; }
+    bool Contains(T value) {
+      std::lock_guard<std::mutex> lk(m_mutex);
+      auto begin = m_deque.begin();
+      auto end = m_deque.end();
+      return std::find(begin, end, value) != end;
+    }
+    template<class P>
+    bool Contains(P pred) {
+      std::lock_guard<std::mutex> lk(m_mutex);
+      auto begin = m_deque.begin();
+      auto end = m_deque.end();
+      return std::find_if(begin, end, pred) != end;
+    }
 
-    /// @warning Not thread-safe
-    std::deque<T>::iterator begin() { return m_deque.begin(); }
-
-    /// @warning Not thread-safe
-    std::deque<T>::iterator end()   { return m_deque.end();   }
-
+    template<class Func>
+    void ForEach(Func func) {
+      std::lock_guard<std::mutex> lk(m_mutex);
+      auto begin = m_deque.begin();
+      auto end = m_deque.end();
+      std::for_each(begin, end, func);
+    }
 
   private:
     mutable std::mutex m_mutex;

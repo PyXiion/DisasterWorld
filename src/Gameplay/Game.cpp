@@ -67,7 +67,6 @@ namespace px::disaster::gameplay {
       size_t ram = utils::GetUsedMemory();
       ImGui::Text("RAM: %luM", ram / 1024lu / 1024lu);
 
-      // Camera
       if (ImGui::TreeNode("Camera")) {
         Vector2f camPos = m_camera->GetPosition();
         Vector2f camSize = m_camera->GetSize();
@@ -80,14 +79,19 @@ namespace px::disaster::gameplay {
 
         ImGui::TreePop();
       }
-      // if (ImGui::TreeNode("Memory")) {
-      //   {
-      //     std::lock_guard<std::mutex> lk(m_world->m_chunksMutex);
-      //     ImGui::Text("Chunks: %lu MB", m_world->m_chunks.size() * sizeof(Chunk) / 1024 / 1024);
-      //   }
-      //   // ImGui::Text("");
-      //   ImGui::TreePop();
-      // }
+      if (ImGui::TreeNode("Chunks")) {
+        ImGui::Text("Chunks queue size = %lu", m_world->m_chunkRequests.Size());
+        int i = 0;
+        m_world->IterateChunks([&] (ChunkPtr &elem) {
+          Vector2i pos = elem->GetPosition();
+          ImGui::Text("#%d at %d %d, loaded=%d, visisble=%d, ref count=%lu", 
+              i++, pos.x, pos.y, 
+              elem->IsLoaded(), 
+              m_camera->IsInView(elem->GetBounds().Convert<float>()),
+              elem.use_count());
+        });
+        ImGui::TreePop();
+      }
     }
     ImGui::End();
   }
@@ -128,11 +132,7 @@ namespace px::disaster::gameplay {
   void Game::Draw() {
     EASY_BLOCK("Game::Draw", profiler::colors::Green700);
 
-    static graphics::Sprite sprite(&ResourceManager::GetTexture("splash"));
-
-    m_camera->Apply(graphics::Sprite::GetShader());
-    // sprite.SetPosition(m_camera->GetPosition());
-    sprite.Draw();
+    m_world->Draw();
   }
 
   void Game::Update(float deltaTime) {
@@ -196,48 +196,30 @@ namespace px::disaster::gameplay {
   }
   void Game::ProcessChunksVisibility() {
     EASY_BLOCK("Game::ProcessChunksVisibility");
-    std::unique_lock<std::mutex> lk(m_world->GetChunksMutex());
-    auto &chunks = m_world->GetChunksUnsafe();
-    Vector2f camPos = m_camera->GetPosition() / static_cast<float>(kChunkSize);
-    Vector2f camSize = m_camera->GetSize() / 2.0f / static_cast<float>(kChunkSize);
-    camPos.x = std::floor(camPos.x);
-    camPos.y = std::floor(camPos.y);
 
-    camSize.x = std::ceil(camSize.x);
-    camSize.y = std::ceil(camSize.y);
+    DeleteChunksOutOfSight();
+    LoadChunksInSight();
+  }
+  void Game::LoadChunksInSight() {
+    EASY_BLOCK("Game::LoadChunksInSight");
+    FloatRect cameraViewBounds = m_camera->GetViewBounds();
+    Vector2f leftTop(cameraViewBounds.left, cameraViewBounds.top);
+    Vector2f rightBottom = leftTop + Vector2f(cameraViewBounds.width, cameraViewBounds.height);
 
-    // Unload chunks that are too far from the camera position. 
-    // Only one chunk per frame
-    EASY_BLOCK("Unload chunks");
-    for (auto it = chunks.begin(); it != chunks.end(); ) {
-      Vector2i chunkPos = (*it)->GetPosition();
-      if (static_cast<int>(std::floor(std::abs(camPos.x - chunkPos.x))) > camSize.x ||
-          static_cast<int>(std::floor(std::abs(camPos.y - chunkPos.y))) > camSize.y) {
-        // it->Unload();
-        it = chunks.erase(it);
-        PX_LOG("Chunk %d %d deleted", chunkPos.x, chunkPos.y);
-        break;
-      } 
-      else {
-        ++it;
-      }
-    }
-    EASY_END_BLOCK;
-    lk.unlock();
+    leftTop /= static_cast<float>(kChunkSize);
+    rightBottom /= static_cast<float>(kChunkSize);
 
-    // Load chunks that are close to the camera position. 
-    // Requests only one chunk per frame
-    EASY_BLOCK("Load chunks");
-    bool requested = false;
-    for (int x = std::floor(camPos.x - camSize.x); x <= std::ceil(camPos.x + camSize.x); x++) {
-      for (int y = std::floor(camPos.y - camSize.y); y <= std::ceil(camPos.y + camSize.y); y++) {
+    for (int x = std::floor(leftTop.x); x <= std::floor(rightBottom.x); x++) {
+      for (int y = std::floor(leftTop.y); y <= std::floor(rightBottom.y); y++) {
         if (m_world->RequestChunk({x, y})) {
-          requested = true;
-          break;
+          return;
         }
       }
-      if (requested) break;
     }
+  }
+  void Game::DeleteChunksOutOfSight() {
+    EASY_BLOCK("Game::DeleteChunksOutOfSight");
+    m_world->DeleteChunksIf([this](ChunkPtr &chunk) { return !m_camera->IsInView(chunk->GetBounds().Convert<float>()); });
   }
 
   void Game::ProcessTicks() {

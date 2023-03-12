@@ -3,6 +3,7 @@
 #include <Disaster/Graphics/Shader.hpp>
 #include <Disaster/System/Window.hpp>
 #include <Disaster/System/Vector2.hpp>
+#include <Disaster/System/Rect.hpp>
 #include <glm/glm.hpp>
 
 namespace px::disaster::gameplay {
@@ -23,6 +24,10 @@ namespace px::disaster::gameplay {
     float GetZoom() const;
 
     void Apply(graphics::Shader &shader) const;
+
+    FloatRect GetViewBounds() const;
+    bool IsInView(Vector2f point) const;
+    bool IsInView(FloatRect rect) const;
 
   private:
     glm::mat4 m_projection;

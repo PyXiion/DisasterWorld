@@ -16,10 +16,10 @@
 #include <Disaster/Gameplay/BaseWorldGenerator.hpp>
 #include <Disaster/System/Vector2.hpp>
 #include <Disaster/ThreadSafe/Queue.hpp>
-#include <Disaster/Utils/FastNoiseLite.h>
 
 namespace px::disaster::gameplay {
   typedef std::shared_ptr<Chunk> ChunkPtr;
+  typedef std::weak_ptr<Chunk> WeakChunkPtr;
   class World : public Tickable {
     friend class Game;
   public:
@@ -38,9 +38,12 @@ namespace px::disaster::gameplay {
     bool IsChunkQueued(Vector2i position);
     bool IsChunkLoaded(Vector2i position);
 
+    size_t GetChunkCount();
 
-    std::vector<ChunkPtr> &GetChunksUnsafe();
-    std::mutex &GetChunksMutex();
+    template<class Func>
+    void IterateChunks(Func func);
+    template<class Func>
+    void DeleteChunksIf(Func func);
 
     void Draw() const;
 
@@ -48,17 +51,31 @@ namespace px::disaster::gameplay {
     std::vector<ChunkPtr> m_chunks;
     std::mutex m_chunksMutex;
 
-    thread_safe::Queue<ChunkPtr> m_chunkRequests;
+    thread_safe::Queue<WeakChunkPtr> m_chunkRequests;
     
     std::thread m_chunkProcessingThread;
     std::atomic_bool m_terminateThreads;
 
     IWorldGenerator *m_worldGenerator;
 
-    void AppendChunk(ChunkPtr chunk);
+    void AppendChunk(ChunkPtr &&chunk);
 
     void ChunkLoadThread();
   };
+
+  template<class Func>
+  void World::IterateChunks(Func func) {
+    std::lock_guard<std::mutex> lk(m_chunksMutex);
+    std::for_each(m_chunks.begin(), m_chunks.end(), func);
+  }
+  template<class Func>
+  void World::DeleteChunksIf(Func func) {
+    std::lock_guard<std::mutex> lk(m_chunksMutex);
+    auto begin = m_chunks.begin();
+    auto end = m_chunks.end();
+    auto it = std::remove_if(begin, end, func);
+    m_chunks.erase(it, end);
+  }
 }
 
 #endif // PX_DISASTER_GAMEPLAY_WORLD_HPP

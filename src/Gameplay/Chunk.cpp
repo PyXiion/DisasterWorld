@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include <Disaster/Program.hpp>
+#include <Disaster/Graphics/Sprite.hpp>
 #include <easy/profiler.h>
 
 
@@ -74,9 +75,18 @@ namespace px::disaster::gameplay {
     return *m_loaded;
   }
 
+  IntRect Chunk::GetBounds() const {
+    return IntRect(m_position.x * kChunkSize, m_position.y * kChunkSize, kChunkSize, kChunkSize);
+  }
+
   void Chunk::Draw() const {
     EASY_BLOCK("Chunk::Draw");
     // TODO: realise later
+
+    static graphics::Sprite sprite;
+    sprite.SetPosition((m_position * kChunkSize).Convert<float>());
+    sprite.SetSize(kChunkSize, kChunkSize);
+    sprite.Draw();
   }
 
   void Chunk::GenerateGridVertices() {

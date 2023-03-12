@@ -8,8 +8,9 @@ namespace px::disaster::thread_safe {
   template<class T>
   class Queue {
   private:
+    using Container = std::queue<T>;
     mutable std::mutex m_mutex;
-    std::queue<T> m_queue;
+    Container m_queue;
     std::condition_variable m_dataCond;
 
   public:
@@ -53,6 +54,11 @@ namespace px::disaster::thread_safe {
     bool Empty() const {
       std::lock_guard<std::mutex> lk(m_mutex);
       return m_queue.empty();
+    }
+
+    Container::size_type Size() const {
+      std::lock_guard<std::mutex> lk(m_mutex);
+      return m_queue.size();
     }
   };
 }
